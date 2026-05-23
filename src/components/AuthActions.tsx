@@ -27,7 +27,7 @@ export function AuthActions({ locale, compact = false }: AuthActionsProps) {
     return (
       <Button
         asChild
-        className="premium-cta h-[42px] rounded-xl bg-gradient-to-r from-red-500 to-amber-500 px-[22px] text-white shadow-[0_8px_24px_rgba(245,158,11,0.16)] hover:from-red-500 hover:to-amber-400"
+        className="premium-cta h-[42px] rounded-xl bg-gradient-to-r from-red-500 to-amber-500 px-4 text-sm text-white shadow-[0_8px_24px_rgba(245,158,11,0.16)] hover:from-red-500 hover:to-amber-400 2xl:px-[22px]"
       >
         <Link href={`/${locale}#newsletter`}>{labels.signUp}</Link>
       </Button>
@@ -62,18 +62,18 @@ function ClerkAuthActions({ locale, compact }: AuthActionsProps) {
         </div>
       </Show>
       <Show when="signed-out">
-        <div className={compact ? "flex flex-col gap-2" : "flex items-center gap-2 lg:gap-4"}>
+        <div className={compact ? "flex flex-col gap-2" : "flex items-center gap-2 2xl:gap-4"}>
           <SignInButton mode="modal" forceRedirectUrl={`/${locale}`}>
             <Button
               variant="ghost"
-              className="premium-control h-[42px] rounded-xl border border-white/[0.05] bg-white/[0.035] text-white hover:border-white/10 hover:bg-white/[0.055] focus-visible:ring-2 focus-visible:ring-amber-500/60"
+              className="premium-control h-[42px] rounded-xl border border-white/[0.05] bg-white/[0.035] px-3 text-sm text-white hover:border-white/10 hover:bg-white/[0.055] focus-visible:ring-2 focus-visible:ring-amber-500/60 2xl:px-4"
             >
               <LogIn className="h-4 w-4" />
               {labels.signIn}
             </Button>
           </SignInButton>
           <SignUpButton mode="modal" forceRedirectUrl={`/${locale}`}>
-            <Button className="premium-cta h-[42px] rounded-xl border-0 bg-gradient-to-r from-red-500 to-amber-500 px-[22px] text-white shadow-[0_8px_24px_rgba(245,158,11,0.16)] hover:from-red-500 hover:to-amber-400">
+            <Button className="premium-cta h-[42px] rounded-xl border-0 bg-gradient-to-r from-red-500 to-amber-500 px-4 text-sm text-white shadow-[0_8px_24px_rgba(245,158,11,0.16)] hover:from-red-500 hover:to-amber-400 2xl:px-[22px]">
               <UserPlus className="h-4 w-4" />
               {labels.signUp}
             </Button>

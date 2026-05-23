@@ -35,7 +35,7 @@ export default function MobileNav({ isOpen }: MobileNavProps) {
   return (
     <div
       className={cn(
-        "fixed inset-x-3 top-[88px] overflow-hidden rounded-3xl border border-white/12 bg-black/86 shadow-[0_24px_80px_rgba(0,0,0,0.55),0_0_42px_rgba(245,158,11,0.08)] backdrop-blur-2xl transition-all duration-300 2xl:hidden",
+        "fixed inset-x-3 top-[88px] overflow-hidden rounded-3xl border border-white/12 bg-black/86 shadow-[0_24px_80px_rgba(0,0,0,0.55),0_0_42px_rgba(245,158,11,0.08)] backdrop-blur-2xl transition-all duration-300 xl:hidden",
         isOpen ? "max-h-[calc(100vh-104px)] opacity-100" : "max-h-0 border-transparent opacity-0"
       )}
     >

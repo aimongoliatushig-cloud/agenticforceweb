@@ -40,8 +40,8 @@ export default function DesktopNav() {
   return (
     <>
       <nav
-        className={`absolute left-1/2 hidden -translate-x-1/2 items-center 2xl:flex ${
-          locale === "mn" ? "gap-6" : "gap-[42px]"
+        className={`absolute left-1/2 hidden -translate-x-1/2 items-center xl:flex ${
+          locale === "mn" ? "gap-5 2xl:gap-6" : "gap-7 2xl:gap-[42px]"
         }`}
       >
         <NavDropdown
@@ -60,7 +60,7 @@ export default function DesktopNav() {
           <Link
             key={link.href}
             href={link.href}
-            className="premium-nav-link relative rounded-xl px-1 py-2 text-[15px] font-medium text-[#d1d1d1] transition-all duration-200 hover:-translate-y-px hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60"
+            className="premium-nav-link relative whitespace-nowrap rounded-xl px-1 py-2 text-sm font-medium text-[#d1d1d1] transition-all duration-200 hover:-translate-y-px hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 2xl:text-[15px]"
             onMouseEnter={() => setActiveDropdown(null)}
           >
             {link.label}
@@ -69,7 +69,7 @@ export default function DesktopNav() {
       </nav>
 
       <div
-        className="relative z-10 ml-auto hidden items-center gap-3 2xl:flex"
+        className="relative z-10 ml-auto hidden items-center gap-2 xl:flex 2xl:gap-3"
         onMouseEnter={() => setActiveDropdown(null)}
       >
         <LanguageSwitcher />
