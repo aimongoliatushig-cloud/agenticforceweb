@@ -1,6 +1,14 @@
-# Hermes Signup Webhooks
+# Hermes Signup Webhook Sender
 
 AgenticForce sends normalized signup leads to Hermes for both Clerk signups and academy enrollments.
+
+Important boundary: this Vercel website does **not** implement the Hermes receiver endpoint. Hermes Agent owns the receiver:
+
+```text
+POST <HERMES_PUBLIC_URL>/webhooks/website-signup
+```
+
+The website only sends outbound events to that public Hermes URL through `HERMES_WEBHOOK_URL`.
 
 ## Required Environment Variables
 
@@ -34,7 +42,7 @@ svix-signature
 
 ## Hermes Outbound Webhook
 
-Hermes signup lead delivery sends a POST request to `HERMES_WEBHOOK_URL`.
+Hermes signup lead delivery sends a POST request from the website to `HERMES_WEBHOOK_URL`, which must point at the Hermes Agent backend receiver.
 
 Required headers:
 
@@ -48,6 +56,13 @@ X-Hub-Signature-256: sha256=<hmac_sha256_hex>
 The request body is signed as raw JSON using HMAC-SHA256 and `HERMES_WEBHOOK_SECRET`.
 
 Hermes delivery is non-blocking for user flows. If Hermes is down, the server logs the failure and the signup or enrollment flow continues.
+
+The Vercel website should not expose or implement `/webhooks/website-signup` for Hermes. It should only configure:
+
+```env
+HERMES_WEBHOOK_URL=https://hermes.example.com/webhooks/website-signup
+HERMES_WEBHOOK_SECRET=<shared Hermes subscription secret>
+```
 
 ## Academy Enrollment
 
