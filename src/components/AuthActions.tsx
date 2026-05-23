@@ -50,14 +50,7 @@ function ClerkAuthActions({ locale, compact }: AuthActionsProps) {
   return (
     <>
       <Show when="signed-in">
-        <div className="flex items-center gap-3">
-          <Button
-            asChild
-            variant="ghost"
-            className="premium-control h-[42px] rounded-xl border border-white/[0.05] bg-white/[0.035] text-white hover:border-white/10 hover:bg-white/[0.055]"
-          >
-            <Link href="/admin">{labels.admin}</Link>
-          </Button>
+        <div className="flex items-center">
           <UserButton />
         </div>
       </Show>
