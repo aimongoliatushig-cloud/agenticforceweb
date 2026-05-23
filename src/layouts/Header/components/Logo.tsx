@@ -11,16 +11,16 @@ export default function Logo() {
   return (
     <Link
       href={`/${locale}`}
-      className="flex items-center gap-1.5 sm:gap-2 relative z-10 group"
+      className="group relative z-10 flex items-center gap-2 sm:gap-2.5"
     >
-      <div className="relative w-8 h-8 sm:w-10 sm:h-10">
-        <div className="absolute inset-0 bg-gradient-to-tr from-red-500 to-amber-500 rounded-lg rotate-45 transform origin-center group-hover:scale-105 transition-transform"></div>
-        <div className="absolute inset-[2.5px] sm:inset-[3px] bg-black rounded-lg flex items-center justify-center text-white font-bold">
+      <div className="relative h-9 w-9 sm:h-10 sm:w-10">
+        <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-red-500 to-amber-500 shadow-[0_0_18px_rgba(245,158,11,0.14)] transition-all duration-200 group-hover:-translate-y-px group-hover:rotate-45"></div>
+        <div className="absolute inset-[3px] flex items-center justify-center rounded-lg bg-black text-lg font-bold text-white sm:text-xl">
           A
         </div>
       </div>
-      <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-red-500 to-amber-500 bg-clip-text text-transparent">
-        AgenticForce
+      <span className="hidden text-xl font-bold tracking-tight text-white/90 min-[430px]:inline sm:text-2xl">
+        Agentic<span className="text-amber-500">Force</span>
       </span>
     </Link>
   );

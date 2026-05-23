@@ -18,7 +18,10 @@ export function AuthActions({ locale, compact = false }: AuthActionsProps) {
 
   if (!clerkEnabled) {
     return (
-      <Button asChild className="bg-gradient-to-r from-red-500 to-amber-500 text-white">
+      <Button
+        asChild
+        className="premium-cta h-[42px] rounded-xl bg-gradient-to-r from-red-500 to-amber-500 px-[22px] text-white shadow-[0_8px_24px_rgba(245,158,11,0.16)] hover:from-red-500 hover:to-amber-400"
+      >
         <Link href={`/${locale}#newsletter`}>{labels.signUp}</Link>
       </Button>
     );
@@ -34,7 +37,11 @@ function ClerkAuthActions({ locale, compact }: AuthActionsProps) {
     <>
       <Show when="signed-in">
         <div className="flex items-center gap-3">
-          <Button asChild variant="ghost" className="text-white hover:bg-white/10">
+          <Button
+            asChild
+            variant="ghost"
+            className="premium-control h-[42px] rounded-xl border border-white/[0.05] bg-white/[0.035] text-white hover:border-white/10 hover:bg-white/[0.055]"
+          >
             <Link href="/admin">{labels.admin}</Link>
           </Button>
           <UserButton />
@@ -45,14 +52,14 @@ function ClerkAuthActions({ locale, compact }: AuthActionsProps) {
           <SignInButton mode="modal" forceRedirectUrl={`/${locale}`}>
             <Button
               variant="ghost"
-              className="text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-amber-500/70"
+              className="premium-control h-[42px] rounded-xl border border-white/[0.05] bg-white/[0.035] text-white hover:border-white/10 hover:bg-white/[0.055] focus-visible:ring-2 focus-visible:ring-amber-500/60"
             >
               <LogIn className="h-4 w-4" />
               {labels.signIn}
             </Button>
           </SignInButton>
           <SignUpButton mode="modal" forceRedirectUrl={`/${locale}`}>
-            <Button className="bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white border-0 shadow-lg shadow-amber-500/20">
+            <Button className="premium-cta h-[42px] rounded-xl border-0 bg-gradient-to-r from-red-500 to-amber-500 px-[22px] text-white shadow-[0_8px_24px_rgba(245,158,11,0.16)] hover:from-red-500 hover:to-amber-400">
               <UserPlus className="h-4 w-4" />
               {labels.signUp}
             </Button>

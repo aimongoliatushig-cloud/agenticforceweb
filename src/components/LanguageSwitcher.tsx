@@ -15,20 +15,31 @@ function switchLocale(pathname: string, locale: Locale) {
   return `/${locale}`;
 }
 
-export function LanguageSwitcher() {
+type LanguageSwitcherProps = {
+  compact?: boolean;
+};
+
+export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
   const pathname = usePathname() || "/en";
   const current = isLocale(pathname.split("/")[1]) ? pathname.split("/")[1] : "en";
 
   return (
-    <div className="flex items-center gap-1 rounded-md border border-white/10 bg-white/5 p-1 text-xs text-white/80">
-      <Globe2 className="h-3.5 w-3.5 ml-1" />
+    <div
+      className={cn(
+        "premium-control flex items-center gap-1 rounded-xl border border-white/[0.05] bg-white/[0.035] p-1 text-xs text-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-px hover:border-white/10 hover:bg-white/[0.055]",
+        compact ? "h-10" : "h-[42px] px-1.5"
+      )}
+    >
+      <Globe2 className={cn("h-3.5 w-3.5 text-white/85", compact ? "ml-0.5" : "ml-1")} />
       {(["en", "mn"] as Locale[]).map((locale) => (
         <Link
           key={locale}
           href={switchLocale(pathname, locale)}
           className={cn(
-            "rounded px-2 py-1 uppercase transition-colors",
-            current === locale ? "bg-white text-black" : "hover:bg-white/10"
+            "rounded-lg px-2 py-1 uppercase transition-all duration-300",
+            current === locale
+              ? "bg-transparent text-amber-500"
+              : "text-white/78 hover:bg-white/[0.06] hover:text-white"
           )}
         >
           {locale}

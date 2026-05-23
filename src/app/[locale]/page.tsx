@@ -3,12 +3,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Newspaper, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AgenticWorkflowBackground } from "@/components/AgenticWorkflowBackground";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { AcademyEnrollmentForm } from "@/components/AcademyEnrollmentForm";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { QuoteForm } from "@/components/QuoteForm";
 import { UserSync } from "@/components/UserSync";
-import { WorkflowParticles } from "@/components/WorkflowParticles";
 import { academyTracks, articleExcerpt, articleTitle, localized, services } from "@/lib/content";
 import { getPublishedArticles } from "@/lib/articles";
 import { dictionary, normalizeLocale, type Locale } from "@/lib/i18n";
@@ -97,9 +97,8 @@ function Hero({ locale }: { locale: Locale }) {
 
   return (
     <section className="relative flex min-h-[94svh] items-center overflow-hidden bg-black pt-20">
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,.1),#000),radial-gradient(circle_at_20%_15%,rgba(239,68,68,.25),transparent_30%),radial-gradient(circle_at_85%_30%,rgba(245,158,11,.18),transparent_26%)]" />
-      <WorkflowParticles />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,.72),rgba(0,0,0,.28)_48%,rgba(0,0,0,.58)),linear-gradient(to_bottom,rgba(0,0,0,.08),#000_97%)]" />
+      <AgenticWorkflowBackground />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,.78),rgba(0,0,0,.18)_48%,rgba(0,0,0,.46)),linear-gradient(to_bottom,rgba(0,0,0,.06),#000_97%)]" />
       <div className="container relative z-10 mx-auto grid items-center gap-10 px-4 py-14 lg:grid-cols-[1fr_0.9fr]">
         <div>
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/78 backdrop-blur">
@@ -129,20 +128,17 @@ function Hero({ locale }: { locale: Locale }) {
             ))}
           </div>
         </div>
-        <div className="relative min-h-[420px] overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
-          <Image
-            src="/images/dashboard.png"
-            alt="AgenticForce command center"
-            fill
-            priority
-            className="object-cover opacity-90"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-5">
-            <div className="rounded-lg border border-white/10 bg-black/70 p-4 backdrop-blur">
-              <p className="text-sm text-white/60">AgenticForce Command Layer</p>
-              <p className="mt-1 text-xl font-semibold">ERP agents, academy cohorts, Hermes intelligence, CRM analytics</p>
-            </div>
+        <div className="hero-dashboard-float relative min-h-[390px] overflow-visible sm:min-h-[470px] lg:min-h-[560px]">
+          <div className="absolute inset-y-[10%] right-0 w-[92%] rounded-full bg-amber-500/10 blur-[90px]" />
+          <div className="absolute inset-y-0 right-[-12px] w-[108%] [mask-image:linear-gradient(to_right,transparent_0%,black_10%,black_92%,transparent_100%)] sm:right-[-22px] lg:right-[-64px] lg:w-[118%]">
+            <Image
+              src="/images/agentic-command-layer.png"
+              alt="AgenticForce command layer dashboard"
+              fill
+              priority
+              sizes="(min-width: 1024px) 58vw, 92vw"
+              className="object-contain object-right opacity-95 drop-shadow-[0_34px_90px_rgba(0,0,0,0.72)]"
+            />
           </div>
         </div>
       </div>

@@ -26,7 +26,7 @@ export function HeroImage() {
   }, []);
 
   return (
-    <div className="flex-1 relative mt-8 lg:mt-0 max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-full mx-auto">
+    <div className="hero-dashboard-float flex-1 relative mt-8 lg:mt-0 max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-full mx-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}

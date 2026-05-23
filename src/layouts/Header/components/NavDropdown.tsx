@@ -106,17 +106,17 @@ export default function NavDropdown({
     ? {
         wrapper: "border-b border-white/10 pb-2",
         button:
-          "flex items-center justify-between w-full py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/70 rounded-md px-2",
-        content: "pl-2 mt-1 space-y-0.5 animate-fadeIn",
-        item: "block py-1.5 px-3 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-colors active:bg-white/15",
+          "flex items-center justify-between w-full py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/70 rounded-xl px-3 text-white/85 transition-all duration-300 hover:bg-amber-400/8 hover:text-amber-100",
+        content: "pl-2 mt-1 space-y-1 animate-fadeIn",
+        item: "block py-2 px-3 text-white/70 hover:text-white hover:bg-amber-400/8 rounded-lg transition-all duration-300 active:bg-white/15",
       }
     : {
         wrapper: "relative",
         button:
-          "flex items-center gap-1 text-white/80 hover:text-white transition-colors py-2 px-1 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/70 text-sm lg:text-base",
+          "premium-nav-link premium-nav-active relative flex items-center gap-1 rounded-xl px-1 py-2 text-[15px] font-medium text-[#d1d1d1] transition-all duration-200 hover:-translate-y-px hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60",
         content:
-          "absolute top-full left-0 mt-1 w-64 bg-black/90 border border-white/10 rounded-xl overflow-hidden backdrop-blur-xl shadow-xl p-3 animate-fadeIn",
-        item: "flex items-center px-4 py-2.5 hover:bg-white/10 rounded-lg transition-colors",
+          "absolute top-full left-0 mt-4 w-64 overflow-hidden rounded-2xl border border-white/[0.06] bg-black/85 p-3 shadow-[0_18px_48px_rgba(0,0,0,0.45),0_8px_24px_rgba(245,158,11,0.08)] backdrop-blur-xl animate-fadeIn",
+        item: "flex items-center rounded-xl px-4 py-2.5 text-white/75 transition-all duration-200 hover:translate-x-1 hover:bg-white/[0.055] hover:text-white",
       };
 
   return (
@@ -145,6 +145,9 @@ export default function NavDropdown({
 
       {isOpen && (
         <div ref={dropdownRef} className={mobileStyles.content}>
+          {!isMobile && (
+            <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/60 to-transparent" />
+          )}
           {items.map((item) => (
             <Link key={item} href="#" className={mobileStyles.item}>
               <span className={cn("font-medium", "text-sm")}>{item}</span>

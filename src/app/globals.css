@@ -140,6 +140,154 @@
     animation: pulse-slow 4s ease-in-out infinite;
 }
 
+@keyframes agent-node-pulse {
+
+    0%,
+    100% {
+        opacity: 0.78;
+        box-shadow: 0 0 24px rgba(245, 158, 11, 0.06);
+    }
+
+    50% {
+        opacity: 0.94;
+        box-shadow: 0 0 34px rgba(245, 158, 11, 0.12);
+    }
+}
+
+@keyframes agent-core-pulse {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        filter: drop-shadow(0 0 18px rgba(245, 158, 11, 0.28));
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.035);
+        filter: drop-shadow(0 0 28px rgba(249, 115, 22, 0.38));
+    }
+}
+
+@keyframes hero-dashboard-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+.agent-node>div {
+    animation: agent-node-pulse 7s ease-in-out infinite;
+}
+
+.agent-node:nth-of-type(2)>div {
+    animation-delay: -1.8s;
+}
+
+.agent-node:nth-of-type(3)>div {
+    animation-delay: -3.2s;
+}
+
+.agent-core {
+    animation: agent-core-pulse 8s ease-in-out infinite;
+}
+
+.workflow-packet {
+    opacity: 0.86;
+}
+
+.hero-dashboard-float {
+    animation: hero-dashboard-float 9s ease-in-out infinite;
+}
+
+.premium-header-shell {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        0 10px 30px rgba(245, 158, 11, 0.10),
+        0 14px 44px rgba(0, 0, 0, 0.34);
+}
+
+.premium-nav-link::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -9px;
+    width: 0;
+    height: 1px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.85), transparent);
+    box-shadow: 0 7px 18px rgba(245, 158, 11, 0.16);
+    opacity: 0;
+    transition: width 0.2s ease, opacity 0.2s ease;
+}
+
+.premium-nav-link::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -18px;
+    width: 34px;
+    height: 12px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.10);
+    filter: blur(10px);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.premium-nav-link:hover::after,
+.premium-nav-link:hover::before,
+.premium-nav-active::after,
+.premium-nav-active::before {
+    opacity: 1;
+}
+
+.premium-nav-link:hover::after,
+.premium-nav-active::after {
+    width: 48px;
+}
+
+.premium-control,
+.premium-icon-button,
+.premium-cta {
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.premium-control:hover,
+.premium-icon-button:hover,
+.premium-cta:hover {
+    transform: translateY(-1px);
+}
+
+.premium-cta:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 10px 26px rgba(245, 158, 11, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .agent-node>div,
+    .agent-core,
+    .hero-dashboard-float,
+    .premium-control,
+    .premium-icon-button,
+    .premium-cta,
+    .premium-nav-link {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .workflow-packet {
+        display: none;
+    }
+}
+
 /* Gradient text */
 .gradient-text {
     background-clip: text;

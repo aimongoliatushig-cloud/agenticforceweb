@@ -26,13 +26,13 @@ export default function MobileNav({ isOpen }: MobileNavProps) {
   return (
     <div
       className={cn(
-        "md:hidden fixed inset-x-0 top-[60px] bg-black/95 backdrop-blur-lg border-t border-white/10 transition-all duration-300 overflow-hidden",
-        isOpen ? "max-h-[calc(100vh-60px)] opacity-100" : "max-h-0 opacity-0"
+        "fixed inset-x-3 top-[88px] overflow-hidden rounded-3xl border border-white/12 bg-black/86 shadow-[0_24px_80px_rgba(0,0,0,0.55),0_0_42px_rgba(245,158,11,0.08)] backdrop-blur-2xl transition-all duration-300 lg:hidden",
+        isOpen ? "max-h-[calc(100vh-104px)] opacity-100" : "max-h-0 border-transparent opacity-0"
       )}
     >
       <div
         className={cn(
-          "container mx-auto px-3 py-4 flex flex-col gap-2 transition-all duration-300 overflow-y-auto",
+          "mx-auto flex flex-col gap-2 overflow-y-auto px-4 py-4 transition-all duration-300",
           isOpen ? "translate-y-0" : "-translate-y-4"
         )}
       >
@@ -53,7 +53,7 @@ export default function MobileNav({ isOpen }: MobileNavProps) {
           <Link
             key={link.href}
             href={link.href}
-            className="py-2 px-2 border-b border-white/10 hover:bg-white/5 rounded-md transition-colors active:bg-white/10"
+            className="rounded-xl border-b border-white/10 px-3 py-2.5 text-white/82 transition-all duration-300 hover:bg-amber-400/8 hover:text-amber-100 active:bg-white/10"
           >
             {link.label}
           </Link>
