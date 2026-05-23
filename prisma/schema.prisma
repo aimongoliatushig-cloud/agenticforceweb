@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum ArticleStatus {
+  draft
+  published
+  archived
+}
+
+enum ArticleSourceType {
+  original
+  hermes
+  imported
+}
+
+enum LeadStatus {
+  new
+  contacted
+  qualified
+  won
+  lost
+}
+
+model User {
+  id           String    @id @default(cuid())
+  clerkUserId  String    @unique
+  email        String    @unique
+  name         String?
+  locale       String    @default("en")
+  role         UserRole  @default(user)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastSeenAt   DateTime?
+
+  articleViews ArticleView[]
+  pageEvents   PageEvent[]
+  newsletters  NewsletterSubscriber[]
+  crmNotes     CrmNote[] @relation("CrmNoteUser")
+}
+
+model Article {
+  id                 String            @id @default(cuid())
+  slug               String            @unique
+  status             ArticleStatus     @default(draft)
+  sourceType         ArticleSourceType @default(original)
+  canonicalSourceUrl String?
+  sourceName         String?
+  coverImage         String?
+  category           String
+  readTime           Int               @default(4)
+  titleEn            String
+  titleMn            String
+  excerptEn          String
+  excerptMn          String
+  bodyEn             String
+  bodyMn             String
+  seoTitleEn         String?
+  seoTitleMn         String?
+  seoDescriptionEn   String?
+  seoDescriptionMn   String?
+  publishedAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  views ArticleView[]
+}
+
+model ArticleView {
+  id          String   @id @default(cuid())
+  articleId   String
+  userId      String?
+  sessionId   String?
+  locale      String
+  percentRead Int      @default(0)
+  timeOnPage  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([articleId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model NewsletterSubscriber {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  locale           String    @default("en")
+  consent          Boolean   @default(false)
+  unsubscribeToken String    @unique
+  userId           String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  clicks NewsletterClick[]
+  notes  CrmNote[] @relation("CrmNoteSubscriber")
+}
+
+model QuoteRequest {
+  id              String     @id @default(cuid())
+  name            String
+  company         String?
+  email           String
+  serviceInterest String
+  message         String
+  locale          String     @default("en")
+  status          LeadStatus @default(new)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  notes CrmNote[] @relation("CrmNoteQuote")
+}
+
+model CrmNote {
+  id           String   @id @default(cuid())
+  body         String
+  createdAt    DateTime @default(now())
+  authorUserId String?
+  userId       String?
+  subscriberId String?
+  quoteId      String?
+
+  author     User?                 @relation("CrmNoteUser", fields: [authorUserId], references: [id], onDelete: SetNull)
+  subscriber NewsletterSubscriber? @relation("CrmNoteSubscriber", fields: [subscriberId], references: [id], onDelete: Cascade)
+  quote      QuoteRequest?         @relation("CrmNoteQuote", fields: [quoteId], references: [id], onDelete: Cascade)
+}
+
+model PageEvent {
+  id                String   @id @default(cuid())
+  userId            String?
+  sessionId         String?
+  locale            String?
+  path              String
+  eventType         String
+  referrer          String?
+  utmSource         String?
+  utmMedium         String?
+  utmCampaign       String?
+  newsletterClickId String?
+  durationSeconds   Int?
+  metadata          Json?
+  createdAt         DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([path, createdAt])
+  @@index([userId, createdAt])
+}
+
+model NewsletterCampaign {
+  id        String   @id @default(cuid())
+  subjectEn String
+  subjectMn String
+  briefEn   String
+  briefMn   String
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
+
+  clicks NewsletterClick[]
+}
+
+model NewsletterClick {
+  id           String   @id @default(cuid())
+  campaignId   String
+  subscriberId String?
+  articleSlug  String
+  locale       String
+  token        String   @unique
+  clickedAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  campaign   NewsletterCampaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  subscriber NewsletterSubscriber? @relation(fields: [subscriberId], references: [id], onDelete: SetNull)
+}
