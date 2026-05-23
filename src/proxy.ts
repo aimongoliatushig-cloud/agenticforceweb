@@ -6,20 +6,28 @@ const clerkConfigured = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
 );
 
-const protectedMiddleware = clerkMiddleware(async (auth, request) => {
+const clerkProxy = clerkMiddleware(async (auth, request) => {
   if (isAdminRoute(request)) {
     await auth.protect();
   }
 });
 
-export default function middleware(request: NextRequest, event: NextFetchEvent) {
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (!clerkConfigured && isAdminRoute(request)) {
     return NextResponse.redirect(new URL("/en", request.url));
   }
 
-  return protectedMiddleware(request, event);
+  if (!clerkConfigured) {
+    return NextResponse.next();
+  }
+
+  return clerkProxy(request, event);
 }
 
 export const config = {
-  matcher: ["/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)"],
+  matcher: [
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/__clerk/(.*)",
+    "/(api|trpc)(.*)",
+  ],
 };

@@ -12,7 +12,8 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 }
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
-  const app = (
+  return (
+    <ClerkProvider>
     <ThemeProvider
       attribute="class"
       defaultTheme="dark"
@@ -21,11 +22,6 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     >
       {children}
     </ThemeProvider>
+    </ClerkProvider>
   );
-
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    return app;
-  }
-
-  return <ClerkProvider>{app}</ClerkProvider>;
 }

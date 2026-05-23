@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import { normalizeLocale } from "@/lib/i18n";
@@ -6,7 +6,13 @@ import { normalizeLocale } from "@/lib/i18n";
 export async function POST(request: Request) {
   let clerkUser;
   try {
-    clerkUser = await currentUser();
+    const session = await auth();
+    if (!session.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const client = await clerkClient();
+    clerkUser = await client.users.getUser(session.userId);
   } catch {
     return NextResponse.json({ error: "Auth unavailable" }, { status: 401 });
   }

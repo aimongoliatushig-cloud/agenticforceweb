@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { hasDatabaseUrl, prisma } from "./db";
 
 export async function getCurrentUserId() {
@@ -30,7 +30,13 @@ export async function isAdminUser() {
     .filter(Boolean);
 
   try {
-    const clerkUser = await currentUser();
+    const session = await auth();
+    if (!session.userId) {
+      return false;
+    }
+
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(session.userId);
     const email = clerkUser?.emailAddresses[0]?.emailAddress.toLowerCase();
 
     if (email && adminEmails.includes(email)) {
