@@ -33,3 +33,6 @@ yarn.lock
 
 # npm
 package-lock.json
+
+# clerk configuration (can include secrets)
+/.clerk/

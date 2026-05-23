@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Newspaper, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+import { AcademyEnrollmentForm } from "@/components/AcademyEnrollmentForm";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { QuoteForm } from "@/components/QuoteForm";
 import { UserSync } from "@/components/UserSync";
@@ -208,6 +209,7 @@ function Academy({ locale }: { locale: Locale }) {
                 </div>
               </article>
             ))}
+            <AcademyEnrollmentForm locale={locale} />
           </div>
         </div>
       </div>
