@@ -14,7 +14,14 @@ type AuthActionsProps = {
 
 export function AuthActions({ locale, compact = false }: AuthActionsProps) {
   const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
-  const labels = dictionary[locale].nav;
+  const labels =
+    locale === "mn"
+      ? {
+          admin: "CRM",
+          signIn: "Нэвтрэх",
+          signUp: "Бүртгүүлэх",
+        }
+      : dictionary[locale].nav;
 
   if (!clerkEnabled) {
     return (
@@ -31,7 +38,14 @@ export function AuthActions({ locale, compact = false }: AuthActionsProps) {
 }
 
 function ClerkAuthActions({ locale, compact }: AuthActionsProps) {
-  const labels = dictionary[locale].nav;
+  const labels =
+    locale === "mn"
+      ? {
+          admin: "CRM",
+          signIn: "Нэвтрэх",
+          signUp: "Бүртгүүлэх",
+        }
+      : dictionary[locale].nav;
 
   return (
     <>

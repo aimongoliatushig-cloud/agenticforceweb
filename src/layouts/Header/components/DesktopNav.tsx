@@ -13,6 +13,15 @@ export default function DesktopNav() {
   const pathname = usePathname();
   const locale = normalizeLocale(pathname?.split("/")[1]);
   const labels = dictionary[locale].nav;
+  const navLabels =
+    locale === "mn"
+      ? {
+          services: "Үйлчилгээ",
+          academy: "Академи",
+          articles: "Нийтлэл",
+          quote: "Санал авах",
+        }
+      : labels;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -30,19 +39,23 @@ export default function DesktopNav() {
 
   return (
     <>
-      <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-[42px] lg:flex">
+      <nav
+        className={`absolute left-1/2 hidden -translate-x-1/2 items-center 2xl:flex ${
+          locale === "mn" ? "gap-6" : "gap-[42px]"
+        }`}
+      >
         <NavDropdown
           id="services"
-          label={labels.services}
+          label={navLabels.services}
           items={serviceItems}
           activeDropdown={activeDropdown}
           setActiveDropdown={setActiveDropdown}
         />
 
         {[
-          { label: labels.academy, href: `/${locale}#academy` },
-          { label: labels.articles, href: `/${locale}/articles` },
-          { label: labels.quote, href: `/${locale}#request-quote` },
+          { label: navLabels.academy, href: `/${locale}#academy` },
+          { label: navLabels.articles, href: `/${locale}/articles` },
+          { label: navLabels.quote, href: `/${locale}#request-quote` },
         ].map((link) => (
           <Link
             key={link.href}
@@ -56,7 +69,7 @@ export default function DesktopNav() {
       </nav>
 
       <div
-        className="relative z-10 ml-auto hidden items-center gap-3 lg:flex"
+        className="relative z-10 ml-auto hidden items-center gap-3 2xl:flex"
         onMouseEnter={() => setActiveDropdown(null)}
       >
         <LanguageSwitcher />

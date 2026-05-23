@@ -60,7 +60,7 @@ export function Header() {
         {/* Desktop Navigation */}
         <DesktopNav />
 
-        <div className="relative z-10 flex items-center gap-2 lg:hidden">
+        <div className="relative z-10 flex items-center gap-2 2xl:hidden">
           <LanguageSwitcher compact />
           <Button
             asChild
