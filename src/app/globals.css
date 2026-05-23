@@ -253,6 +253,10 @@
     width: 48px;
 }
 
+.premium-nav-active {
+    color: #f4c38a;
+}
+
 .premium-control,
 .premium-icon-button,
 .premium-cta {
