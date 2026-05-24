@@ -7,12 +7,15 @@ import NavDropdown from "./NavDropdown";
 import { AuthActions } from "@/components/AuthActions";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { dictionary, normalizeLocale } from "@/lib/i18n";
+import { getSolutionsNavItems } from "@/features/solutions";
 
 export default function DesktopNav() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const pathname = usePathname();
   const locale = normalizeLocale(pathname?.split("/")[1]);
   const labels = dictionary[locale].nav;
+  const hasLocalePrefix = pathname?.split("/")[1] === locale;
+  const solutionItems = getSolutionsNavItems(locale, hasLocalePrefix);
   const navLabels =
     locale === "mn"
       ? {
@@ -41,9 +44,17 @@ export default function DesktopNav() {
     <>
       <nav
         className={`absolute left-1/2 hidden -translate-x-1/2 items-center xl:flex ${
-          locale === "mn" ? "gap-5 2xl:gap-6" : "gap-7 2xl:gap-[42px]"
+          locale === "mn" ? "gap-4 2xl:gap-6" : "gap-5 2xl:gap-8"
         }`}
       >
+        <NavDropdown
+          id="solutions"
+          label={locale === "mn" ? "Шийдлүүд" : "Solutions"}
+          items={solutionItems}
+          activeDropdown={activeDropdown}
+          setActiveDropdown={setActiveDropdown}
+        />
+
         <NavDropdown
           id="services"
           label={navLabels.services}

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { AuthActions } from "@/components/AuthActions";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { dictionary, normalizeLocale } from "@/lib/i18n";
+import { getSolutionsNavItems } from "@/features/solutions";
 
 type MobileNavProps = {
   isOpen: boolean;
@@ -18,6 +19,8 @@ export default function MobileNav({ isOpen }: MobileNavProps) {
   const pathname = usePathname();
   const locale = normalizeLocale(pathname?.split("/")[1]);
   const labels = dictionary[locale].nav;
+  const hasLocalePrefix = pathname?.split("/")[1] === locale;
+  const solutionItems = getSolutionsNavItems(locale, hasLocalePrefix);
   const navLabels =
     locale === "mn"
       ? {
@@ -45,6 +48,15 @@ export default function MobileNav({ isOpen }: MobileNavProps) {
           isOpen ? "translate-y-0" : "-translate-y-4"
         )}
       >
+        <NavDropdown
+          id="mobileSolutions"
+          label={locale === "mn" ? "Шийдлүүд" : "Solutions"}
+          items={solutionItems}
+          isMobile
+          activeDropdown={activeDropdown}
+          setActiveDropdown={setActiveDropdown}
+        />
+
         <NavDropdown
           id="mobileServices"
           label={navLabels.services}

@@ -12,6 +12,9 @@ function switchLocale(pathname: string, locale: Locale) {
     segments[1] = locale;
     return segments.join("/") || `/${locale}`;
   }
+  if (pathname.startsWith("/solutions")) {
+    return `/${locale}${pathname}`;
+  }
   return `/${locale}`;
 }
 
