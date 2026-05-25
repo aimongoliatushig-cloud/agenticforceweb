@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AppProviders } from "@/providers";
 import { Header, Footer } from "@/layouts";
@@ -46,6 +47,7 @@ export default function RootLayout({
           <Header />
           <main>{children}</main>
           <Footer />
+          <Analytics />
         </AppProviders>
       </body>
     </html>
