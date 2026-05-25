@@ -3,10 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SignUpButton } from "@clerk/nextjs";
 import { LockKeyhole } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+import { ArticleReadTracker } from "@/components/ArticleReadTracker";
+import { Button } from "@/components/ui/button";
 import { articleBody, articleExcerpt, articleTitle } from "@/lib/content";
-import { getArticleBySlug } from "@/lib/articles";
+import { articleCategoryLabel, getArticleBySlug } from "@/lib/articles";
+import { articleIndustryPath, getArticleIndustry } from "@/lib/article-industries";
 import { getCurrentUserId } from "@/lib/auth";
 import { dictionary, normalizeLocale } from "@/lib/i18n";
 
@@ -28,17 +30,30 @@ export default async function ArticlePage({ params }: PageProps) {
   const hidden = body.slice(visibleCount);
   const visible = body.slice(0, visibleCount);
   const copy = dictionary[locale].articles;
+  const industry = getArticleIndustry(article.industrySlug);
+  const imageAlt =
+    locale === "mn"
+      ? article.imageAltMn || articleTitle(article, locale)
+      : article.imageAltEn || articleTitle(article, locale);
 
   return (
     <article className="min-h-screen bg-black pt-24 text-white">
       <AnalyticsTracker locale={locale} />
+      <ArticleReadTracker slug={slug} locale={locale} />
       <section className="container mx-auto px-4 py-10">
         <div className="mx-auto max-w-3xl">
           <Link href={`/${locale}/articles`} className="text-sm text-amber-300 hover:text-amber-200">
             ← {locale === "mn" ? "Нийтлэлүүд" : "Articles"}
           </Link>
           <p className="mt-8 text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">
-            {article.category} · {article.readTime} min
+            {industry ? (
+              <Link href={articleIndustryPath(industry.slug, locale)} className="hover:text-amber-100">
+                {articleCategoryLabel(article, locale)}
+              </Link>
+            ) : (
+              articleCategoryLabel(article, locale)
+            )}{" "}
+            · {article.readTime} min
           </p>
           <h1 className="mt-4 text-4xl font-black leading-tight sm:text-6xl">
             {articleTitle(article, locale)}
@@ -60,7 +75,7 @@ export default async function ArticlePage({ params }: PageProps) {
         <div className="relative mx-auto mt-8 h-[340px] max-w-5xl overflow-hidden rounded-lg border border-white/10">
           <Image
             src={article.coverImage || "/placeholder.jpg"}
-            alt={articleTitle(article, locale)}
+            alt={imageAlt}
             fill
             className="object-cover"
           />
@@ -72,7 +87,7 @@ export default async function ArticlePage({ params }: PageProps) {
         </div>
         {!userId && hidden.length > 0 ? (
           <div className="relative mx-auto max-w-3xl">
-            <div className="pointer-events-none max-h-56 overflow-hidden blur-[2px] opacity-45">
+            <div className="pointer-events-none max-h-56 overflow-hidden opacity-45 blur-[2px]">
               <div className="prose prose-invert prose-lg prose-p:text-white/72">
                 {hidden.map((paragraph) => (
                   <p key={paragraph}>{paragraph}</p>

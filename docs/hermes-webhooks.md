@@ -64,6 +64,150 @@ HERMES_WEBHOOK_URL=https://hermes.example.com/webhooks/website-signup
 HERMES_WEBHOOK_SECRET=<shared Hermes subscription secret>
 ```
 
+## Hermes Inbound AI News
+
+Hermes can send simple AI news imports into the website with:
+
+```text
+POST /api/hermes/import-news
+```
+
+Required header:
+
+```text
+x-hermes-secret: <HERMES_AGENT_SECRET>
+```
+
+Each imported article can include `industrySlug` so it appears in the correct Articles submenu/category page:
+
+```json
+{
+  "articles": [
+    {
+      "slug": "healthcare-ai-agents-change-care-ops",
+      "industrySlug": "healthcare",
+      "status": "published",
+      "canonicalSourceUrl": "https://provider.example/story",
+      "sourceName": "Top News Provider",
+      "category": "Healthcare",
+      "readTime": 5,
+      "titleEn": "How AI agents are changing healthcare operations",
+      "titleMn": "AI агентууд эрүүл мэндийн үйл ажиллагааг хэрхэн өөрчилж байна",
+      "excerptEn": "Short bilingual summary...",
+      "excerptMn": "Товч тайлбар...",
+      "bodyEn": "Reviewed article body...",
+      "bodyMn": "Хянагдсан нийтлэлийн үндсэн агуулга..."
+    }
+  ]
+}
+```
+
+Supported `industrySlug` values:
+
+- `healthcare`
+- `finance-banking`
+- `retail-ecommerce`
+- `education`
+- `real-estate`
+- `manufacturing`
+- `logistics-transportation`
+- `hospitality-tourism`
+- `legal-professional-services`
+- `government-public-sector`
+
+## Hermes Daily Industry News
+
+The scheduled Hermes cron agent should use this production ingest route:
+
+```text
+POST /api/hermes/daily-industry-news
+```
+
+Required environment variables:
+
+```env
+HERMES_NEWS_WEBHOOK_SECRET=<shared HMAC secret>
+HERMES_NEWS_ALLOWED_SOURCE=hermes-daily-industry-news
+HERMES_NEWS_DEFAULT_STATUS=published
+```
+
+Required headers:
+
+```text
+Content-Type: application/json
+x-hermes-source: hermes-daily-industry-news
+x-hermes-timestamp: <unix timestamp seconds>
+x-hermes-signature: sha256=<hmac_sha256_hex>
+```
+
+Signature payload:
+
+```text
+timestamp + "." + rawJsonBody
+```
+
+The route rejects requests older than 5 minutes and verifies the signature with `HERMES_NEWS_WEBHOOK_SECRET`.
+
+Payload shape:
+
+```json
+{
+  "source": "hermes-daily-industry-news",
+  "date": "2026-05-25",
+  "timezone": "Asia/Ulaanbaatar",
+  "industries": [
+    {
+      "name": "Healthcare",
+      "slug": "healthcare",
+      "articles": [
+        {
+          "id": "2026-05-25-healthcare-01",
+          "rank": 1,
+          "title": {
+            "en": "Example English title",
+            "mn": "Монгол гарчиг"
+          },
+          "summary": {
+            "en": "Short English summary.",
+            "mn": "Богино монгол хураангуй."
+          },
+          "body": {
+            "en": "Longer English article body.",
+            "mn": "Дэлгэрэнгүй монгол нийтлэл."
+          },
+          "imageUrl": "https://example.com/image.jpg",
+          "imageAlt": {
+            "en": "Healthcare AI news image",
+            "mn": "Эрүүл мэндийн AI мэдээний зураг"
+          },
+          "sourceName": "Reuters",
+          "sourceUrl": "https://example.com/original-news",
+          "publishedAt": "2026-05-25T01:30:00Z",
+          "tags": ["AI", "Healthcare"],
+          "importanceScore": 92
+        }
+      ]
+    }
+  ]
+}
+```
+
+The website maps Hermes fields into the existing `Article` model:
+
+- `summary.en/mn` -> `excerptEn/excerptMn`
+- `body.en/mn` -> `bodyEn/bodyMn`
+- `imageUrl` -> `coverImage`
+- `imageAlt.en/mn` -> `imageAltEn/imageAltMn`
+- `sourceUrl` -> `canonicalSourceUrl`
+- `rank` -> `dailyRank`
+- `slug` -> `industrySlug`
+
+Hermes can discover the current website industries from:
+
+```text
+GET /api/industries
+```
+
 ## Academy Enrollment
 
 Academy enrollment requires a signed-in Clerk user, then collects:

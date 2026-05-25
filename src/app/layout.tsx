@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AppProviders } from "@/providers";
 import { Header, Footer } from "@/layouts";
+import { RequestDemoPopup } from "@/components/RequestDemoPopup";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -46,6 +47,7 @@ export default function RootLayout({
         <AppProviders>
           <Header />
           <main>{children}</main>
+          <RequestDemoPopup />
           <Footer />
           <Analytics />
         </AppProviders>

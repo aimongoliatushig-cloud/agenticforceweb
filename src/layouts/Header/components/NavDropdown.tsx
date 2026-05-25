@@ -120,7 +120,7 @@ export default function NavDropdown({
     : {
         wrapper: "relative",
         button:
-          "premium-nav-link premium-nav-active relative flex items-center gap-1 rounded-xl px-1 py-2 text-[15px] font-medium text-[#d1d1d1] transition-all duration-200 hover:-translate-y-px hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60",
+          "premium-nav-link premium-nav-active relative flex items-center gap-1 rounded-xl px-1 py-2 text-sm font-medium text-[#d1d1d1] transition-all duration-200 hover:-translate-y-px hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 2xl:text-[15px]",
         content: cn(
           "absolute top-full left-0 mt-4 overflow-hidden rounded-2xl border border-white/[0.06] bg-black/85 p-3 shadow-[0_18px_48px_rgba(0,0,0,0.45),0_8px_24px_rgba(245,158,11,0.08)] backdrop-blur-xl animate-fadeIn",
           hasManyItems ? "w-[min(760px,calc(100vw-48px))]" : "w-64"

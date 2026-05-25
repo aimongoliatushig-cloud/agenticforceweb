@@ -62,7 +62,11 @@ model Article {
   canonicalSourceUrl String?
   sourceName         String?
   coverImage         String?
+  imageAltEn         String?
+  imageAltMn         String?
   category           String
+  industrySlug       String?
+  dailyRank          Int?
   readTime           Int               @default(4)
   titleEn            String
   titleMn            String
@@ -74,11 +78,15 @@ model Article {
   seoTitleMn         String?
   seoDescriptionEn   String?
   seoDescriptionMn   String?
+  tags               String[]          @default([])
+  importanceScore    Int?
   publishedAt        DateTime?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
   views ArticleView[]
+
+  @@index([industrySlug, publishedAt])
 }
 
 model ArticleView {
@@ -126,6 +134,25 @@ model QuoteRequest {
   updatedAt       DateTime   @updatedAt
 
   notes CrmNote[] @relation("CrmNoteQuote")
+}
+
+model DemoLead {
+  id          String     @id @default(cuid())
+  industry    String
+  companyName String
+  contactName String
+  phone       String
+  email       String
+  locale      String     @default("en")
+  path        String?
+  referrer    String?
+  userAgent   String?
+  status      LeadStatus @default(new)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([email, createdAt])
+  @@index([industry, createdAt])
 }
 
 model CrmNote {

@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils";
 import { AuthActions } from "@/components/AuthActions";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { dictionary, normalizeLocale } from "@/lib/i18n";
+import { getArticleIndustryNavItems } from "@/lib/article-industries";
 import { getSolutionsNavItems } from "@/features/solutions";
+import { getIndustriesNavItems } from "@/features/industries";
 
 type MobileNavProps = {
   isOpen: boolean;
@@ -21,6 +23,8 @@ export default function MobileNav({ isOpen }: MobileNavProps) {
   const labels = dictionary[locale].nav;
   const hasLocalePrefix = pathname?.split("/")[1] === locale;
   const solutionItems = getSolutionsNavItems(locale, hasLocalePrefix);
+  const industryItems = getIndustriesNavItems(locale, hasLocalePrefix);
+  const articleItems = getArticleIndustryNavItems(locale);
   const navLabels =
     locale === "mn"
       ? {
@@ -58,6 +62,15 @@ export default function MobileNav({ isOpen }: MobileNavProps) {
         />
 
         <NavDropdown
+          id="mobileIndustries"
+          label={locale === "mn" ? "Салбарууд" : "Industries"}
+          items={industryItems}
+          isMobile
+          activeDropdown={activeDropdown}
+          setActiveDropdown={setActiveDropdown}
+        />
+
+        <NavDropdown
           id="mobileServices"
           label={navLabels.services}
           items={serviceItems}
@@ -66,9 +79,17 @@ export default function MobileNav({ isOpen }: MobileNavProps) {
           setActiveDropdown={setActiveDropdown}
         />
 
+        <NavDropdown
+          id="mobileArticles"
+          label={navLabels.articles}
+          items={articleItems}
+          isMobile
+          activeDropdown={activeDropdown}
+          setActiveDropdown={setActiveDropdown}
+        />
+
         {[
           { label: navLabels.academy, href: `/${locale}#academy` },
-          { label: navLabels.articles, href: `/${locale}/articles` },
           { label: navLabels.quote, href: `/${locale}#request-quote` },
         ].map((link) => (
           <Link

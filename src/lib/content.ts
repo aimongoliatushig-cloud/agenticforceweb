@@ -10,6 +10,12 @@ export type LocalizedArticle = {
   readTime: number;
   sourceName?: string | null;
   canonicalSourceUrl?: string | null;
+  industrySlug?: string | null;
+  dailyRank?: number | null;
+  imageAltEn?: string | null;
+  imageAltMn?: string | null;
+  tags?: string[];
+  importanceScore?: number | null;
   publishedAt?: Date | string | null;
   titleEn: string;
   titleMn: string;
@@ -90,6 +96,7 @@ export const seedArticles: LocalizedArticle[] = [
     slug: "agentic-erp-next-operating-model",
     status: "published",
     category: "Agentic ERP",
+    industrySlug: "manufacturing",
     coverImage: "/images/analytics.png",
     readTime: 6,
     sourceName: "AgenticForce",
@@ -109,6 +116,7 @@ export const seedArticles: LocalizedArticle[] = [
     slug: "training-agentic-ai-professionals",
     status: "published",
     category: "Academy",
+    industrySlug: "education",
     coverImage: "/images/team.png",
     readTime: 5,
     sourceName: "AgenticForce Academy",
@@ -128,6 +136,7 @@ export const seedArticles: LocalizedArticle[] = [
     slug: "hermes-reviewed-ai-news-workflow",
     status: "published",
     category: "Hermes",
+    industrySlug: "government-public-sector",
     coverImage: "/images/automation.png",
     readTime: 4,
     sourceName: "Hermes Agent",
