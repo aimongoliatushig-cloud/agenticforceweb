@@ -37,6 +37,10 @@ export function Header() {
     };
   }, [isMenuOpen]);
 
+  if (pathname?.startsWith("/aithon2026")) {
+    return null;
+  }
+
   return (
     <header
       className={cn(

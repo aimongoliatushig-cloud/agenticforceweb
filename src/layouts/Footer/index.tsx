@@ -8,6 +8,11 @@ import { normalizeLocale } from "@/lib/i18n";
 export function Footer() {
   const pathname = usePathname();
   const locale = normalizeLocale(pathname?.split("/")[1]);
+
+  if (pathname?.startsWith("/aithon2026")) {
+    return null;
+  }
+
   const groups = [
     {
       title: locale === "mn" ? "Шийдэл" : "Solutions",
