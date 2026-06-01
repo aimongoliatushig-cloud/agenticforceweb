@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("SUPABASE_DATABASE_URL")
 }
 
 enum UserRole {
@@ -32,26 +32,382 @@ enum LeadStatus {
   lost
 }
 
-model User {
-  id           String    @id @default(cuid())
-  clerkUserId  String    @unique
-  email        String    @unique
-  name         String?
-  phone        String?
-  country      String?
-  city         String?
-  currentWork  String?
-  locale       String    @default("en")
-  role         UserRole  @default(user)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  lastSeenAt   DateTime?
+enum PostlyContentStatus {
+  PLANNED
+  DRAFT_GENERATED
+  WAITING_APPROVAL
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+  SENT_TO_MAKE
+  MEDIA_GENERATED
+  SCHEDULED
+  POSTED
+  FAILED
+}
 
-  articleViews ArticleView[]
-  pageEvents   PageEvent[]
-  newsletters  NewsletterSubscriber[]
-  crmNotes     CrmNote[] @relation("CrmNoteUser")
+enum PostlyPlanStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+enum PostlyTemplateStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PostlyProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PostlyApprovalStatus {
+  WAITING
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+}
+
+enum PostlyPostingStatus {
+  PENDING
+  SENT_TO_MAKE
+  SCHEDULED
+  POSTED
+  FAILED
+}
+
+enum PostlyPlatform {
+  FACEBOOK
+  INSTAGRAM
+}
+
+enum PostlyContentType {
+  CAROUSEL
+  REEL
+  POSTER
+  STORY
+}
+
+enum PostlyAssetType {
+  IMAGE
+  VIDEO
+  CAROUSEL_SLIDE
+  REEL_COVER
+}
+
+enum PostlyAssetSource {
+  UPLOADED
+  GENERATED
+  MAKE
+  HERMES
+}
+
+enum PostlySocialStatus {
+  CONNECTED
+  EXPIRED
+  DISCONNECTED
+}
+
+model User {
+  id          String    @id @default(cuid())
+  clerkUserId String    @unique
+  email       String    @unique
+  name        String?
+  phone       String?
+  country     String?
+  city        String?
+  currentWork String?
+  locale      String    @default("en")
+  role        UserRole  @default(user)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastSeenAt  DateTime?
+
+  articleViews       ArticleView[]
+  pageEvents         PageEvent[]
+  newsletters        NewsletterSubscriber[]
+  crmNotes           CrmNote[]              @relation("CrmNoteUser")
   academyEnrollments AcademyEnrollment[]
+  companyProfile     CompanyProfile?
+  createdPostlyPlans ContentPlan[]          @relation("ContentPlanCreator")
+}
+
+model CompanyProfile {
+  id                String   @id @default(cuid())
+  userId            String?  @unique
+  clerkUserId       String   @unique
+  companyName       String?
+  businessType      String?
+  activityDirection String?
+  description       String?
+  phone             String?
+  email             String?
+  website           String?
+  address           String?
+  workingHours      String?
+  facebookUrl       String?
+  instagramUrl      String?
+  tiktokUrl         String?
+  productsServices  String[] @default([])
+  logoUrl           String?
+  plan              String   @default("Starter")
+  postingFrequency  String?
+  postingTime       String?
+  postingDays       String[] @default([])
+  contentMix        Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user                   User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brandGuideline         BrandGuideline?
+  brandTemplates         BrandTemplate[]
+  productsServicesPostly ProductService[]
+  contentPlans           ContentPlan[]
+  contentItems           ContentItem[]
+  contentAssets          ContentAsset[]
+  postingJobs            PostingJob[]
+  postingLogs            PostingLog[]
+  socialAccounts         SocialAccount[]
+  makeIntegration        MakeIntegration?
+  agentLogs              AgentLog[]
+
+  @@index([clerkUserId])
+}
+
+model BrandGuideline {
+  id             String   @id @default(cuid())
+  companyId      String   @unique
+  toneOfVoice    String?
+  brandColors    String[] @default([])
+  fonts          String[] @default([])
+  logoUrl        String?
+  forbiddenWords String[] @default([])
+  preferredWords String[] @default([])
+  ctaStyle       String?
+  visualStyle    String?
+  language       String   @default("mn")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  company CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model BrandTemplate {
+  id              String               @id @default(cuid())
+  companyId       String
+  name            String
+  type            PostlyContentType
+  category        String?
+  templateFileUrl String?
+  previewImageUrl String?
+  editableFields  Json?
+  size            String?
+  status          PostlyTemplateStatus @default(ACTIVE)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  company      CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contentItems ContentItem[]
+
+  @@index([companyId, status])
+  @@index([companyId, type])
+}
+
+model ProductService {
+  id             String              @id @default(cuid())
+  companyId      String
+  name           String
+  description    String?
+  price          String?
+  benefits       String[]            @default([])
+  targetCustomer String?
+  painPoints     String[]            @default([])
+  status         PostlyProductStatus @default(ACTIVE)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  company CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+}
+
+model ContentPlan {
+  id             String           @id @default(cuid())
+  companyId      String
+  month          String
+  totalCarousels Int              @default(0)
+  totalReels     Int              @default(0)
+  totalPosts     Int              @default(0)
+  strategyNote   String?
+  status         PostlyPlanStatus @default(DRAFT)
+  createdById    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  company      CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy    User?          @relation("ContentPlanCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  contentItems ContentItem[]
+
+  @@index([companyId, month])
+  @@index([companyId, status])
+}
+
+model ContentItem {
+  id                String              @id @default(cuid())
+  companyId         String
+  contentPlanId     String?
+  templateId        String?
+  contentType       PostlyContentType
+  category          String?
+  title             String?
+  caption           String?
+  headline          String?
+  imagePrompt       String?
+  creativeDirection String?
+  scheduledAt       DateTime?
+  status            PostlyContentStatus @default(PLANNED)
+  telegramMessageId String?
+  makeStatus        String?
+  facebookPostUrl   String?
+  instagramPostUrl  String?
+  errorMessage      String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  company          CompanyProfile    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contentPlan      ContentPlan?      @relation(fields: [contentPlanId], references: [id], onDelete: SetNull)
+  template         BrandTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  assets           ContentAsset[]
+  approvalRequests ApprovalRequest[]
+  postingJobs      PostingJob[]
+  postingLogs      PostingLog[]
+  agentLogs        AgentLog[]
+
+  @@index([companyId, status])
+  @@index([contentPlanId, contentType])
+  @@index([scheduledAt])
+}
+
+model ContentAsset {
+  id            String            @id @default(cuid())
+  companyId     String
+  contentItemId String
+  assetType     PostlyAssetType
+  fileUrl       String
+  source        PostlyAssetSource @default(UPLOADED)
+  slideOrder    Int?
+  status        String            @default("ready")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  company     CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contentItem ContentItem    @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt])
+  @@index([contentItemId, assetType])
+}
+
+model ApprovalRequest {
+  id                String               @id @default(cuid())
+  contentItemId     String
+  telegramChatId    String?
+  telegramMessageId String?
+  status            PostlyApprovalStatus @default(WAITING)
+  approvedAt        DateTime?
+  revisionNote      String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  contentItem ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@index([contentItemId, status])
+  @@index([telegramMessageId])
+}
+
+model PostingJob {
+  id                  String              @id @default(cuid())
+  companyId           String
+  contentItemId       String
+  platform            PostlyPlatform
+  scheduledAt         DateTime?
+  status              PostlyPostingStatus @default(PENDING)
+  makeWebhookResponse Json?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  company     CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contentItem ContentItem    @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+  @@index([contentItemId, platform])
+}
+
+model PostingLog {
+  id            String          @id @default(cuid())
+  companyId     String
+  contentItemId String?
+  platform      PostlyPlatform?
+  status        String
+  postedUrl     String?
+  errorMessage  String?
+  rawResponse   Json?
+  createdAt     DateTime        @default(now())
+
+  company     CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contentItem ContentItem?   @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([contentItemId, createdAt])
+}
+
+model SocialAccount {
+  id                   String             @id @default(cuid())
+  companyId            String
+  platform             PostlyPlatform
+  pageName             String?
+  pageId               String?
+  instagramAccountId   String?
+  accessTokenEncrypted String?
+  status               PostlySocialStatus @default(DISCONNECTED)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  company CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, platform])
+}
+
+model MakeIntegration {
+  id                String   @id @default(cuid())
+  companyId         String   @unique
+  webhookUrl        String?
+  webhookSecretHint String?
+  scenarioName      String?
+  status            String   @default("inactive")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model AgentLog {
+  id            String   @id @default(cuid())
+  companyId     String?
+  contentItemId String?
+  agentName     String
+  action        String
+  status        String
+  message       String?
+  rawPayload    Json?
+  createdAt     DateTime @default(now())
+
+  company     CompanyProfile? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  contentItem ContentItem?    @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([contentItemId, createdAt])
+  @@index([agentName, action])
 }
 
 model Article {
@@ -107,18 +463,18 @@ model ArticleView {
 }
 
 model NewsletterSubscriber {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  locale           String    @default("en")
-  consent          Boolean   @default(false)
-  unsubscribeToken String    @unique
+  id               String   @id @default(cuid())
+  email            String   @unique
+  locale           String   @default("en")
+  consent          Boolean  @default(false)
+  unsubscribeToken String   @unique
   userId           String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user   User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   clicks NewsletterClick[]
-  notes  CrmNote[] @relation("CrmNoteSubscriber")
+  notes  CrmNote[]         @relation("CrmNoteSubscriber")
 }
 
 model QuoteRequest {
@@ -192,26 +548,26 @@ model PageEvent {
 }
 
 model NewsletterCampaign {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   subjectEn String
   subjectMn String
   briefEn   String
   briefMn   String
   sentAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   clicks NewsletterClick[]
 }
 
 model NewsletterClick {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   campaignId   String
   subscriberId String?
   articleSlug  String
   locale       String
-  token        String   @unique
+  token        String    @unique
   clickedAt    DateTime?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
 
   campaign   NewsletterCampaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   subscriber NewsletterSubscriber? @relation(fields: [subscriberId], references: [id], onDelete: SetNull)
@@ -248,9 +604,9 @@ model AcademyEnrollment {
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@unique([clerkUserId, courseId])
   @@index([email, createdAt])
   @@index([clerkUserId, createdAt])
-  @@unique([clerkUserId, courseId])
 }
 
 model HermesWebhookDelivery {
