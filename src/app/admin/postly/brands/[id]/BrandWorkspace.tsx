@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   CheckCircle2,
   Clock3,
   ExternalLink,
@@ -66,6 +67,13 @@ type ProductForm = {
   painPoints: string;
 };
 
+type StorageStatus = {
+  bucket: string;
+  ready: boolean;
+  hasSupabaseUrl: boolean;
+  hasServiceRoleKey: boolean;
+};
+
 const emptyTemplate: TemplateForm = {
   name: "",
   type: "POSTER",
@@ -123,6 +131,9 @@ const copy = {
     size: "Size",
     category: "Category",
     uploadFile: "Upload file",
+    storageReady: (bucket: string) => `Supabase Storage ready: ${bucket}`,
+    storageMissing: "File upload is waiting for SUPABASE_SERVICE_ROLE_KEY. Save a template URL for now.",
+    storageCheckFailed: "Storage status check failed",
     previewUrl: "Preview image URL",
     fileUrl: "Template file URL",
     saveChanges: "Save changes",
@@ -244,11 +255,43 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [submittingTemplate, setSubmittingTemplate] = useState(false);
   const [sendingPrompt, setSendingPrompt] = useState(false);
+  const [storageStatus, setStorageStatus] = useState<StorageStatus | null>(null);
   const [message, setMessage] = useState("");
   const c = copy[lang];
+  const storageText = lang === "mn"
+    ? {
+        ready: (bucket: string) => `Supabase Storage бэлэн: ${bucket}`,
+        missing: "File upload-д SUPABASE_SERVICE_ROLE_KEY дутуу байна. Одоогоор template URL хадгалж болно.",
+      }
+    : {
+        ready: (bucket: string) => `Supabase Storage ready: ${bucket}`,
+        missing: "File upload is waiting for SUPABASE_SERVICE_ROLE_KEY. Save a template URL for now.",
+      };
 
   const plannedCount = useMemo(() => items.filter((item) => item.status === "PLANNED").length, [items]);
   const draftCount = useMemo(() => items.filter((item) => item.status === "DRAFT_GENERATED" || item.status === "WAITING_APPROVAL").length, [items]);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/admin/postly/storage")
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Storage status check failed");
+        return data.storage as StorageStatus;
+      })
+      .then((status) => {
+        if (!mounted) return;
+        setStorageStatus(status);
+        if (!status.ready) setTemplateFile(null);
+      })
+      .catch(() => {
+        if (mounted) setStorageStatus(null);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   function updateTemplate<K extends keyof TemplateForm>(key: K, value: TemplateForm[K]) {
     setTemplateForm((current) => ({ ...current, [key]: value }));
@@ -334,6 +377,10 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
     setSubmittingTemplate(true);
     setMessage("");
     try {
+      if (templateFile && storageStatus?.ready === false) {
+        throw new Error(storageText.missing);
+      }
+
       const body = new FormData();
       body.append("name", templateForm.name);
       body.append("type", templateForm.type);
@@ -389,6 +436,10 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
     setSubmittingTemplate(true);
     setMessage("");
     try {
+      if (templateFile && storageStatus?.ready === false) {
+        throw new Error(storageText.missing);
+      }
+
       const body = new FormData();
       body.append("name", templateForm.name);
       body.append("type", templateForm.type);
@@ -597,10 +648,17 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                   <input
                     type="file"
                     accept=".png,.jpg,.jpeg,.svg,.pdf,.pptx,image/png,image/jpeg,image/svg+xml,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                    disabled={storageStatus?.ready === false}
                     onChange={(event) => setTemplateFile(event.target.files?.[0] ?? null)}
-                    className="mt-2 w-full rounded-md border border-white/10 bg-black/45 px-3 py-2 text-sm text-white file:mr-3 file:rounded-md file:border-0 file:bg-amber-300 file:px-3 file:py-2 file:text-sm file:font-bold file:text-black"
+                    className="mt-2 w-full rounded-md border border-white/10 bg-black/45 px-3 py-2 text-sm text-white file:mr-3 file:rounded-md file:border-0 file:bg-amber-300 file:px-3 file:py-2 file:text-sm file:font-bold file:text-black disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <span className="mt-2 block text-xs text-white/35">{templateFile ? templateFile.name : "PNG, JPG, SVG, PDF, PPTX"}</span>
+                  {storageStatus ? (
+                    <span className={`mt-2 flex items-center gap-2 text-xs ${storageStatus.ready ? "text-emerald-300" : "text-amber-200"}`}>
+                      {storageStatus.ready ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                      {storageStatus.ready ? storageText.ready(storageStatus.bucket) : storageText.missing}
+                    </span>
+                  ) : null}
                 </label>
                 <Field label={c.previewUrl} value={templateForm.previewImageUrl} onChange={(value) => updateTemplate("previewImageUrl", value)} placeholder="https://..." />
                 <Field label={c.fileUrl} value={templateForm.templateFileUrl} onChange={(value) => updateTemplate("templateFileUrl", value)} placeholder="Canva/Figma/file URL" />
