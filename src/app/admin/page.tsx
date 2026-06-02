@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Activity, FileText, Mail, MousePointerClick, Users, Workflow } from "lucide-react";
+import { Activity, Building2, FileText, Mail, MousePointerClick, PlugZap, Users, Workflow } from "lucide-react";
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
+import PostlyAdminShell from "./postly/PostlyAdminShell";
 
 export const dynamic = "force-dynamic";
 
@@ -91,20 +92,20 @@ export default async function AdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black pt-24 text-white">
-      <section className="container mx-auto px-4 py-10">
+    <PostlyAdminShell active="dashboard">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-amber-300">
-              Admin
-            </p>
-            <h1 className="text-4xl font-black sm:text-6xl">AgenticForce CRM</h1>
-            <p className="mt-4 max-w-3xl text-white/65">
-              Registered users, newsletter subscribers, quote leads, article drafts, and behavior analytics.
+            <h1 className="text-3xl font-black sm:text-4xl">Dashboard</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/55">
+              Registered users, Postly brand operations, Hermes drafts, and behavior analytics.
             </p>
           </div>
-          <Link href="/en" className="text-sm text-amber-300 hover:text-amber-200">
-            Back to website
+          <Link
+            href="/admin/postly/brands"
+            className="inline-flex h-10 items-center justify-center rounded-md bg-amber-300 px-4 text-sm font-bold text-black transition hover:bg-amber-200"
+          >
+            Create Content
           </Link>
         </div>
 
@@ -127,6 +128,33 @@ export default async function AdminPage() {
               </div>
             );
           })}
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <Link
+            href="/admin/postly/brands"
+            className="rounded-lg border border-amber-300/25 bg-amber-300/10 p-5 transition hover:border-amber-200/60 hover:bg-amber-300/15"
+          >
+            <div className="flex items-center gap-3">
+              <Building2 className="h-5 w-5 text-amber-300" />
+              <div>
+                <p className="font-semibold">Postly brand workspace</p>
+                <p className="mt-1 text-sm text-white/55">Open brands, add templates, and prompt Hermes per brand.</p>
+              </div>
+            </div>
+          </Link>
+          <Link
+            href="/admin/postly/integrations"
+            className="rounded-lg border border-white/10 bg-white/[0.04] p-5 transition hover:border-white/25 hover:bg-white/[0.06]"
+          >
+            <div className="flex items-center gap-3">
+              <PlugZap className="h-5 w-5 text-amber-300" />
+              <div>
+                <p className="font-semibold">Postly integrations</p>
+                <p className="mt-1 text-sm text-white/55">Configure Make.com and social publishing IDs.</p>
+              </div>
+            </div>
+          </Link>
         </div>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-2">
@@ -169,6 +197,6 @@ export default async function AdminPage() {
           </section>
         </div>
       </section>
-    </div>
+    </PostlyAdminShell>
   );
 }
