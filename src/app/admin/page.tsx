@@ -7,6 +7,10 @@ import PostlyAdminShell from "./postly/PostlyAdminShell";
 
 export const dynamic = "force-dynamic";
 
+function adminLang(value: unknown): "en" | "mn" {
+  return value === "mn" ? "mn" : "en";
+}
+
 async function getAdminData() {
   const empty = {
     users: 0,
@@ -75,12 +79,14 @@ async function getAdminData() {
   }
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
   const allowed = await isAdminUser();
   if (!allowed) {
     redirect("/en");
   }
 
+  const { lang } = await searchParams;
+  const currentLang = adminLang(lang);
   const data = await getAdminData();
   const cards = [
     { label: "Registered users", value: data.users, icon: Users },
@@ -92,7 +98,7 @@ export default async function AdminPage() {
   ];
 
   return (
-    <PostlyAdminShell active="dashboard">
+    <PostlyAdminShell active="dashboard" lang={currentLang} currentPath="/admin">
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
