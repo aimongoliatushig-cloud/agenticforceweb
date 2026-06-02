@@ -11,6 +11,53 @@ function adminLang(value: unknown): "en" | "mn" {
   return value === "mn" ? "mn" : "en";
 }
 
+const dashboardCopy = {
+  en: {
+    title: "Dashboard",
+    subtitle: "Registered users, Postly brand operations, Hermes drafts, and behavior analytics.",
+    createContent: "Create Content",
+    dbMissing: "DATABASE_URL is not configured, so the CRM is showing empty fallback data.",
+    cards: {
+      users: "Registered users",
+      subscribers: "Newsletter receivers",
+      quotes: "Quote requests",
+      drafts: "Hermes drafts",
+      pageViews: "Page views",
+      newsletterClicks: "Newsletter clicks",
+    },
+    brandWorkspace: "Postly brand workspace",
+    brandWorkspaceText: "Open brands, add templates, and prompt Hermes per brand.",
+    integrations: "Postly integrations",
+    integrationsText: "Configure Make.com and social publishing IDs.",
+    latestQuotes: "Latest quote requests",
+    noQuotes: "No quote requests yet.",
+    draftQueue: "Hermes draft queue",
+    noDrafts: "No draft articles yet.",
+  },
+  mn: {
+    title: "Хянах самбар",
+    subtitle: "Хэрэглэгч, Postly брэндийн ажил, Hermes draft болон analytics мэдээллийг нэг дор харна.",
+    createContent: "Контент үүсгэх",
+    dbMissing: "DATABASE_URL тохируулагдаагүй тул CRM хоосон fallback data харуулж байна.",
+    cards: {
+      users: "Бүртгэлтэй хэрэглэгч",
+      subscribers: "Newsletter хүлээн авагч",
+      quotes: "Үнийн саналын хүсэлт",
+      drafts: "Hermes draft",
+      pageViews: "Хуудасны үзэлт",
+      newsletterClicks: "Newsletter click",
+    },
+    brandWorkspace: "Postly брэнд workspace",
+    brandWorkspaceText: "Брэнд нээх, template нэмэх, тухайн брэндээр Hermes-д prompt өгөх.",
+    integrations: "Postly интеграци",
+    integrationsText: "Make.com болон social publishing ID-уудыг тохируулна.",
+    latestQuotes: "Сүүлийн үнийн саналын хүсэлт",
+    noQuotes: "Үнийн саналын хүсэлт одоогоор алга.",
+    draftQueue: "Hermes draft queue",
+    noDrafts: "Draft нийтлэл одоогоор алга.",
+  },
+};
+
 async function getAdminData() {
   const empty = {
     users: 0,
@@ -87,14 +134,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const { lang } = await searchParams;
   const currentLang = adminLang(lang);
+  const copy = dashboardCopy[currentLang];
   const data = await getAdminData();
   const cards = [
-    { label: "Registered users", value: data.users, icon: Users },
-    { label: "Newsletter receivers", value: data.subscribers, icon: Mail },
-    { label: "Quote requests", value: data.quotes, icon: Workflow },
-    { label: "Hermes drafts", value: data.drafts, icon: FileText },
-    { label: "Page views", value: data.pageViews, icon: Activity },
-    { label: "Newsletter clicks", value: data.newsletterClicks, icon: MousePointerClick },
+    { label: copy.cards.users, value: data.users, icon: Users },
+    { label: copy.cards.subscribers, value: data.subscribers, icon: Mail },
+    { label: copy.cards.quotes, value: data.quotes, icon: Workflow },
+    { label: copy.cards.drafts, value: data.drafts, icon: FileText },
+    { label: copy.cards.pageViews, value: data.pageViews, icon: Activity },
+    { label: copy.cards.newsletterClicks, value: data.newsletterClicks, icon: MousePointerClick },
   ];
 
   return (
@@ -102,22 +150,22 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-3xl font-black sm:text-4xl">Dashboard</h1>
+            <h1 className="text-3xl font-black sm:text-4xl">{copy.title}</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/55">
-              Registered users, Postly brand operations, Hermes drafts, and behavior analytics.
+              {copy.subtitle}
             </p>
           </div>
           <Link
             href="/admin/postly/brands"
             className="inline-flex h-10 items-center justify-center rounded-md bg-amber-300 px-4 text-sm font-bold text-black transition hover:bg-amber-200"
           >
-            Create Content
+            {copy.createContent}
           </Link>
         </div>
 
         {!hasDatabaseUrl() ? (
           <div className="mt-8 rounded-lg border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100">
-            DATABASE_URL is not configured, so the CRM is showing empty fallback data.
+            {copy.dbMissing}
           </div>
         ) : null}
 
@@ -144,8 +192,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <div className="flex items-center gap-3">
               <Building2 className="h-5 w-5 text-amber-300" />
               <div>
-                <p className="font-semibold">Postly brand workspace</p>
-                <p className="mt-1 text-sm text-white/55">Open brands, add templates, and prompt Hermes per brand.</p>
+                <p className="font-semibold">{copy.brandWorkspace}</p>
+                <p className="mt-1 text-sm text-white/55">{copy.brandWorkspaceText}</p>
               </div>
             </div>
           </Link>
@@ -156,8 +204,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <div className="flex items-center gap-3">
               <PlugZap className="h-5 w-5 text-amber-300" />
               <div>
-                <p className="font-semibold">Postly integrations</p>
-                <p className="mt-1 text-sm text-white/55">Configure Make.com and social publishing IDs.</p>
+                <p className="font-semibold">{copy.integrations}</p>
+                <p className="mt-1 text-sm text-white/55">{copy.integrationsText}</p>
               </div>
             </div>
           </Link>
@@ -165,10 +213,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
         <div className="mt-10 grid gap-6 lg:grid-cols-2">
           <section className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-            <h2 className="text-xl font-semibold">Latest quote requests</h2>
+            <h2 className="text-xl font-semibold">{copy.latestQuotes}</h2>
             <div className="mt-5 space-y-4">
               {data.latestQuotes.length === 0 ? (
-                <p className="text-sm text-white/55">No quote requests yet.</p>
+                <p className="text-sm text-white/55">{copy.noQuotes}</p>
               ) : (
                 data.latestQuotes.map((quote) => (
                   <div key={quote.id} className="rounded-md border border-white/10 bg-black/30 p-4">
@@ -187,10 +235,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </section>
 
           <section className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-            <h2 className="text-xl font-semibold">Hermes draft queue</h2>
+            <h2 className="text-xl font-semibold">{copy.draftQueue}</h2>
             <div className="mt-5 space-y-4">
               {data.latestDrafts.length === 0 ? (
-                <p className="text-sm text-white/55">No draft articles yet.</p>
+                <p className="text-sm text-white/55">{copy.noDrafts}</p>
               ) : (
                 data.latestDrafts.map((draft) => (
                   <div key={draft.id} className="rounded-md border border-white/10 bg-black/30 p-4">

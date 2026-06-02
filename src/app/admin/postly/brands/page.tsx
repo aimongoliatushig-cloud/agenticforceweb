@@ -65,7 +65,7 @@ export default async function AdminPostlyBrandsPage({ searchParams }: { searchPa
           </div>
         ) : null}
 
-        <BrandsManager initialBrands={brands} />
+        <BrandsManager initialBrands={brands} lang={currentLang} />
       </main>
     </PostlyAdminShell>
   );
