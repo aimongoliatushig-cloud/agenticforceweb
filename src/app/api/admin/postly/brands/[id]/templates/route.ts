@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { isAdminUser } from "@/lib/auth";
+import { getCurrentUserId, isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
-import { contentType, uploadTemplateFile } from "@/lib/postly-admin-templates";
+import { contentType, templatePlatform, uploadTemplateFile } from "@/lib/postly-admin-templates";
 import { asString, readJson, writeAgentLog } from "@/lib/postly";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +28,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const company = await prisma.companyProfile.findUnique({ where: { id } });
   if (!company) return NextResponse.json({ error: "Brand not found" }, { status: 404 });
+  const clerkUserId = await getCurrentUserId();
+  const createdBy = clerkUserId ? await prisma.user.findUnique({ where: { clerkUserId }, select: { id: true } }) : null;
 
   let uploadedFile: Awaited<ReturnType<typeof uploadTemplateFile>> | null = null;
   const file = form?.get("file");
@@ -44,8 +46,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const template = await prisma.brandTemplate.create({
     data: {
       companyId: id,
+      createdById: createdBy?.id,
       name,
       type: contentType(body.type),
+      platform: templatePlatform(body.platform),
       category: asString(body.category),
       templateFileUrl: uploadedFileUrl || asString(body.templateFileUrl),
       previewImageUrl,

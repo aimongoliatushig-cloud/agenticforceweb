@@ -132,6 +132,7 @@ model User {
   academyEnrollments AcademyEnrollment[]
   companyProfile     CompanyProfile?
   createdPostlyPlans ContentPlan[]          @relation("ContentPlanCreator")
+  createdTemplates    BrandTemplate[]       @relation("BrandTemplateCreator")
 }
 
 model CompanyProfile {
@@ -197,8 +198,10 @@ model BrandGuideline {
 model BrandTemplate {
   id              String               @id @default(cuid())
   companyId       String
+  createdById     String?
   name            String
   type            PostlyContentType
+  platform        PostlyPlatform?
   category        String?
   templateFileUrl String?
   previewImageUrl String?
@@ -209,10 +212,12 @@ model BrandTemplate {
   updatedAt       DateTime             @updatedAt
 
   company      CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy    User?          @relation("BrandTemplateCreator", fields: [createdById], references: [id], onDelete: SetNull)
   contentItems ContentItem[]
 
   @@index([companyId, status])
   @@index([companyId, type])
+  @@index([companyId, platform])
 }
 
 model ProductService {

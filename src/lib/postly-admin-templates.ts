@@ -1,4 +1,4 @@
-import { PostlyContentType, PostlyTemplateStatus } from "@prisma/client";
+import { PostlyContentType, PostlyPlatform, PostlyTemplateStatus } from "@prisma/client";
 import { asString } from "@/lib/postly";
 
 export const allowedTemplateMimeTypes = new Set([
@@ -21,6 +21,13 @@ export function templateStatus(value: unknown) {
   return Object.values(PostlyTemplateStatus).includes(normalized as PostlyTemplateStatus)
     ? (normalized as PostlyTemplateStatus)
     : PostlyTemplateStatus.ACTIVE;
+}
+
+export function templatePlatform(value: unknown) {
+  const normalized = asString(value)?.toUpperCase();
+  return normalized && Object.values(PostlyPlatform).includes(normalized as PostlyPlatform)
+    ? (normalized as PostlyPlatform)
+    : undefined;
 }
 
 function safeFileName(value: string) {
