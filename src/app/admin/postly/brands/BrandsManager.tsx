@@ -189,6 +189,7 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const c = copy[lang];
+  const withLang = (href: string) => `${href}?lang=${lang}`;
 
   const filteredBrands = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -316,7 +317,7 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
               key={brand.id}
               className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:border-amber-300/40 hover:bg-white/[0.06]"
             >
-              <Link href={`/admin/postly/brands/${brand.id}`} className="block p-5">
+              <Link href={withLang(`/admin/postly/brands/${brand.id}`)} className="block p-5">
                 <div>
                   <div className="grid h-16 w-16 place-items-center rounded-full border border-white/10 bg-black text-xl font-black text-amber-200">
                     {(brand.companyName || "P").slice(0, 1)}
@@ -336,15 +337,15 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
                 </div>
               </Link>
               <div className="grid grid-cols-5 border-t border-white/10">
-                <IconLink href={`/admin/postly/brands/${brand.id}`} label="Chat" icon={<MessageCircle className="h-4 w-4" />} />
-                <IconLink href={`/admin/postly/brands/${brand.id}`} label="Templates" icon={<Store className="h-4 w-4" />} />
+                <IconLink href={withLang(`/admin/postly/brands/${brand.id}`)} label="Chat" icon={<MessageCircle className="h-4 w-4" />} />
+                <IconLink href={withLang(`/admin/postly/brands/${brand.id}`)} label="Templates" icon={<Store className="h-4 w-4" />} />
                 <button onClick={() => openEdit(brand)} className="flex h-11 items-center justify-center border-r border-white/10 text-amber-200 hover:bg-white/5">
                   <Pencil className="h-4 w-4" />
                 </button>
                 <button onClick={() => deleteBrand(brand)} className="flex h-11 items-center justify-center border-r border-white/10 text-red-300 hover:bg-red-400/10">
                   <Trash2 className="h-4 w-4" />
                 </button>
-                <IconLink href={`/admin/postly/brands/${brand.id}`} label="More" icon={<MoreHorizontal className="h-4 w-4" />} />
+                <IconLink href={withLang(`/admin/postly/brands/${brand.id}`)} label="More" icon={<MoreHorizontal className="h-4 w-4" />} />
               </div>
             </article>
           ))

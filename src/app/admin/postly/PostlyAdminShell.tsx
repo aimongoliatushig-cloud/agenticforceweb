@@ -43,7 +43,7 @@ export default function PostlyAdminShell({
     <div className="min-h-screen bg-black text-white">
       {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? <UserSync locale={lang} /> : null}
       <aside className="fixed left-0 top-0 z-30 hidden h-screen w-64 border-r border-white/10 bg-zinc-950/95 px-4 py-5 shadow-2xl shadow-black/40 lg:block">
-        <Link href="/admin" className="flex items-center gap-3 px-2">
+        <Link href={withLang("/admin")} className="flex items-center gap-3 px-2">
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-amber-300 text-sm font-black text-black">P</span>
           <span className="text-lg font-black tracking-tight">Postly.mn</span>
         </Link>
@@ -97,7 +97,7 @@ export default function PostlyAdminShell({
       <div className="lg:pl-64">
         <div className="sticky top-0 z-20 border-b border-white/10 bg-black/85 px-4 py-3 backdrop-blur lg:hidden">
           <div className="flex items-center justify-between">
-            <Link href="/admin" className="flex items-center gap-2">
+            <Link href={withLang("/admin")} className="flex items-center gap-2">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-300 text-xs font-black text-black">P</span>
               <span className="font-black">Postly.mn</span>
             </Link>
