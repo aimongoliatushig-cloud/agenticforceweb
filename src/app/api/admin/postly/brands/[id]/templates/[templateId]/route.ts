@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
-import { contentType, uploadTemplateFile } from "@/lib/postly-admin-templates";
+import { contentType, templateStatus, uploadTemplateFile } from "@/lib/postly-admin-templates";
 import { asString, readJson, writeAgentLog } from "@/lib/postly";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +13,31 @@ async function requireAdmin() {
   return null;
 }
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+async function findTemplate(companyId: string, templateId: string) {
+  return prisma.brandTemplate.findFirst({
+    where: { id: templateId, companyId },
+  });
+}
+
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string; templateId: string }> }) {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const { id } = await params;
+  const { id, templateId } = await params;
+  const template = await findTemplate(id, templateId);
+  if (!template) return NextResponse.json({ error: "Template not found" }, { status: 404 });
+
+  return NextResponse.json({ template });
+}
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string; templateId: string }> }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const { id, templateId } = await params;
+  const existing = await findTemplate(id, templateId);
+  if (!existing) return NextResponse.json({ error: "Template not found" }, { status: 404 });
+
   const isMultipart = request.headers.get("content-type")?.includes("multipart/form-data");
   const form = isMultipart ? await request.formData() : null;
   const body = form
@@ -25,9 +45,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     : await readJson(request);
   const name = asString(body.name);
   if (!name) return NextResponse.json({ error: "Template name is required" }, { status: 400 });
-
-  const company = await prisma.companyProfile.findUnique({ where: { id } });
-  if (!company) return NextResponse.json({ error: "Brand not found" }, { status: 404 });
 
   let uploadedFile: Awaited<ReturnType<typeof uploadTemplateFile>> | null = null;
   const file = form?.get("file");
@@ -41,9 +58,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const uploadedFileUrl = uploadedFile?.url;
   const previewImageUrl = asString(body.previewImageUrl) || (file instanceof File && file.type.startsWith("image/") ? uploadedFileUrl : undefined);
-  const template = await prisma.brandTemplate.create({
+  const template = await prisma.brandTemplate.update({
+    where: { id: templateId },
     data: {
-      companyId: id,
       name,
       type: contentType(body.type),
       category: asString(body.category),
@@ -57,17 +74,39 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           }
         : undefined,
       size: asString(body.size),
+      status: templateStatus(body.status),
     },
   });
 
   await writeAgentLog({
     companyId: id,
     agentName: "Postly Admin",
-    action: "brand_template.create",
+    action: "brand_template.update",
     status: "success",
-    message: `Admin added template ${template.name}`,
-    rawPayload: { ...body, companyId: id, uploadedFile },
+    message: `Admin updated template ${template.name}`,
+    rawPayload: { ...body, companyId: id, templateId, uploadedFile },
   });
 
-  return NextResponse.json({ ok: true, template }, { status: 201 });
+  return NextResponse.json({ ok: true, template });
+}
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string; templateId: string }> }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const { id, templateId } = await params;
+  const existing = await findTemplate(id, templateId);
+  if (!existing) return NextResponse.json({ error: "Template not found" }, { status: 404 });
+
+  await prisma.brandTemplate.delete({ where: { id: templateId } });
+  await writeAgentLog({
+    companyId: id,
+    agentName: "Postly Admin",
+    action: "brand_template.delete",
+    status: "success",
+    message: `Admin deleted template ${existing.name}`,
+    rawPayload: { companyId: id, templateId },
+  });
+
+  return NextResponse.json({ ok: true });
 }

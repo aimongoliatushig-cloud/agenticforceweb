@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       update: {
         email,
         name: clerkUser.fullName,
+        avatarUrl: clerkUser.imageUrl || null,
         locale: normalizeLocale(body.locale),
         lastSeenAt: new Date(),
       },
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
         clerkUserId: clerkUser.id,
         email,
         name: clerkUser.fullName,
+        avatarUrl: clerkUser.imageUrl || null,
         locale: normalizeLocale(body.locale),
         lastSeenAt: new Date(),
       },
