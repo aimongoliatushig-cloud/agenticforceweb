@@ -49,6 +49,7 @@ type Brand = CompanyProfile & {
 type TemplateForm = {
   name: string;
   type: string;
+  platform: string;
   category: string;
   size: string;
   previewImageUrl: string;
@@ -58,6 +59,7 @@ type TemplateForm = {
 const emptyTemplate: TemplateForm = {
   name: "",
   type: "POSTER",
+  platform: "",
   category: "",
   size: "1080x1080",
   previewImageUrl: "",
@@ -82,6 +84,7 @@ const copy = {
     addTemplate: "Add template",
     name: "Name",
     type: "Type",
+    platform: "Platform",
     size: "Size",
     category: "Category",
     uploadFile: "Upload file",
@@ -135,6 +138,7 @@ const copy = {
     addTemplate: "Темплейт нэмэх",
     name: "Нэр",
     type: "Төрөл",
+    platform: "Платформ",
     size: "Хэмжээ",
     category: "Ангилал",
     uploadFile: "Файл upload хийх",
@@ -202,6 +206,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
       const body = new FormData();
       body.append("name", templateForm.name);
       body.append("type", templateForm.type);
+      body.append("platform", templateForm.platform);
       body.append("category", templateForm.category);
       body.append("size", templateForm.size);
       body.append("previewImageUrl", templateForm.previewImageUrl);
@@ -232,6 +237,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
     setTemplateForm({
       name: template.name,
       type: template.type,
+      platform: template.platform || "",
       category: template.category || "",
       size: template.size || "1080x1080",
       previewImageUrl: template.previewImageUrl || "",
@@ -255,6 +261,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
       const body = new FormData();
       body.append("name", templateForm.name);
       body.append("type", templateForm.type);
+      body.append("platform", templateForm.platform);
       body.append("category", templateForm.category);
       body.append("size", templateForm.size);
       body.append("previewImageUrl", templateForm.previewImageUrl);
@@ -395,8 +402,9 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                 <Field label={c.name} value={templateForm.name} onChange={(value) => updateTemplate("name", value)} placeholder="June promo poster" />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <LabeledSelect label={c.type} value={templateForm.type} onChange={(value) => updateTemplate("type", value)} options={["POSTER", "CAROUSEL", "REEL", "STORY"]} />
-                  <Field label={c.size} value={templateForm.size} onChange={(value) => updateTemplate("size", value)} placeholder="1080x1080" />
+                  <LabeledSelect label={c.platform} value={templateForm.platform} onChange={(value) => updateTemplate("platform", value)} options={["", "FACEBOOK", "INSTAGRAM"]} />
                 </div>
+                <Field label={c.size} value={templateForm.size} onChange={(value) => updateTemplate("size", value)} placeholder="1080x1080" />
                 <Field label={c.category} value={templateForm.category} onChange={(value) => updateTemplate("category", value)} placeholder="promo, education" />
                 <label className="block">
                   <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/45">{c.uploadFile}</span>
@@ -451,7 +459,9 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                       </div>
                       <div className="p-4">
                         <p className="font-semibold">{template.name}</p>
-                        <p className="mt-1 text-xs text-white/45">{template.type} · {template.size || "size not set"}</p>
+                        <p className="mt-1 text-xs text-white/45">
+                          {[template.type, template.platform, template.size || "size not set"].filter(Boolean).join(" · ")}
+                        </p>
                         <div className="mt-4 grid grid-cols-3 gap-2">
                           <TemplateActionLink href={template.previewImageUrl || template.templateFileUrl} label={c.preview} unavailable={c.unavailable} icon={<ExternalLink className="h-4 w-4" />} />
                           <button

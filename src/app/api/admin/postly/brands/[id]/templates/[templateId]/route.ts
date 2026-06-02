@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
-import { contentType, templateStatus, uploadTemplateFile } from "@/lib/postly-admin-templates";
+import { contentType, templatePlatform, templateStatus, uploadTemplateFile } from "@/lib/postly-admin-templates";
 import { asString, readJson, writeAgentLog } from "@/lib/postly";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +63,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     data: {
       name,
       type: contentType(body.type),
+      platform: templatePlatform(body.platform),
       category: asString(body.category),
       templateFileUrl: uploadedFileUrl || asString(body.templateFileUrl),
       previewImageUrl,
