@@ -113,6 +113,40 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const hermesTriggered = await triggerHermes({ companyId: id, contentItemId: item.id, prompt });
 
+  await prisma.hermesChatMessage.createMany({
+    data: [
+      {
+        companyId: id,
+        contentItemId: item.id,
+        sender: "admin",
+        message: prompt,
+        status: "sent",
+        metadata: {
+          contentType: item.contentType,
+          templateId: item.templateId,
+        },
+      },
+      {
+        companyId: id,
+        contentItemId: item.id,
+        sender: "hermes",
+        message: hermesTriggered ? "Prompt received. Hermes is generating this brand content." : "Prompt queued. Hermes cron will pick this up.",
+        status: hermesTriggered ? "sent" : "queued",
+        metadata: {
+          contentType: item.contentType,
+          templateId: item.templateId,
+          hermesTriggered,
+        },
+      },
+    ],
+  });
+
+  const chatMessages = await prisma.hermesChatMessage.findMany({
+    where: { companyId: id },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+
   const log = await prisma.agentLog.create({
     data: {
       companyId: id,
@@ -147,5 +181,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     rawPayload: { contentItemId: item.id },
   });
 
-  return NextResponse.json({ ok: true, item, log, hermesTriggered }, { status: 201 });
+  return NextResponse.json({ ok: true, item, log, chatMessages, hermesTriggered }, { status: 201 });
 }

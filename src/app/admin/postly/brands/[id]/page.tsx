@@ -57,6 +57,10 @@ export default async function AdminPostlyBrandPage({
         orderBy: { createdAt: "desc" },
         take: 10,
       },
+      hermesChatMessages: {
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      },
       socialAccounts: true,
       makeIntegration: true,
     },

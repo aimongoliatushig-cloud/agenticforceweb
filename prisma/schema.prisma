@@ -173,6 +173,7 @@ model CompanyProfile {
   socialAccounts         SocialAccount[]
   makeIntegration        MakeIntegration?
   agentLogs              AgentLog[]
+  hermesChatMessages      HermesChatMessage[]
 
   @@index([clerkUserId])
 }
@@ -289,6 +290,7 @@ model ContentItem {
   postingJobs      PostingJob[]
   postingLogs      PostingLog[]
   agentLogs        AgentLog[]
+  hermesChatMessages HermesChatMessage[]
 
   @@index([companyId, status])
   @@index([contentPlanId, contentType])
@@ -414,6 +416,23 @@ model AgentLog {
   @@index([companyId, createdAt])
   @@index([contentItemId, createdAt])
   @@index([agentName, action])
+}
+
+model HermesChatMessage {
+  id            String   @id @default(cuid())
+  companyId     String
+  contentItemId String?
+  sender        String
+  message       String
+  status        String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  company     CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contentItem ContentItem?   @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([contentItemId, createdAt])
 }
 
 model Article {
