@@ -20,13 +20,14 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import type { BrandTemplate, CompanyProfile, ContentItem, ContentPlan, ProductService, AgentLog, SocialAccount, MakeIntegration } from "@prisma/client";
+import type { AgentLog, BrandTemplate, CompanyProfile, ContentItem, ContentPlan, HermesChatMessage, MakeIntegration, ProductService, SocialAccount } from "@prisma/client";
 import type { ReactNode } from "react";
 import PostlyAdminShell from "../../PostlyAdminShell";
 
 type Template = BrandTemplate;
 type Item = ContentItem & { template?: BrandTemplate | null };
 type Plan = ContentPlan & { _count: { contentItems: number } };
+type ChatMessage = HermesChatMessage;
 type Brand = CompanyProfile & {
   brandGuideline: {
     toneOfVoice?: string | null;
@@ -44,6 +45,7 @@ type Brand = CompanyProfile & {
   contentPlans: Plan[];
   contentItems: Item[];
   agentLogs: AgentLog[];
+  hermesChatMessages: ChatMessage[];
   socialAccounts: SocialAccount[];
   makeIntegration: MakeIntegration | null;
 };
@@ -144,6 +146,10 @@ const copy = {
     untitled: "Untitled content",
     content: "content",
     hermesChat: "Hermes chat",
+    chatHistory: "Chat history",
+    noChatHistory: "No Hermes chat history yet.",
+    adminSender: "Admin",
+    hermesSender: "Hermes",
     hermesContext: "Hermes will use this brand context",
     business: "business",
     toneMissing: "brand tone not set",
@@ -214,6 +220,10 @@ const copy = {
     untitled: "Гарчиггүй контент",
     content: "контент",
     hermesChat: "Hermes чат",
+    chatHistory: "Чатын түүх",
+    noChatHistory: "Hermes чатын түүх одоогоор алга.",
+    adminSender: "Админ",
+    hermesSender: "Hermes",
     hermesContext: "Hermes энэ брэндийн context-ийг ашиглана",
     business: "бизнес",
     toneMissing: "брэндийн tone тохируулаагүй",
@@ -244,6 +254,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
   const [products, setProducts] = useState<ProductService[]>(brand.productsServicesPostly);
   const [items, setItems] = useState<Item[]>(brand.contentItems);
   const [logs, setLogs] = useState<AgentLog[]>(brand.agentLogs);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(brand.hermesChatMessages);
   const [templateForm, setTemplateForm] = useState<TemplateForm>(emptyTemplate);
   const [templateFile, setTemplateFile] = useState<File | null>(null);
   const [editingTemplateId, setEditingTemplateId] = useState("");
@@ -503,6 +514,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
       if (!response.ok) throw new Error(data.error || c.promptRequiredFailed);
       setItems((current) => [data.item, ...current]);
       if (data.log) setLogs((current) => [data.log, ...current].slice(0, 10));
+      if (Array.isArray(data.chatMessages)) setChatMessages(data.chatMessages);
       setPrompt("");
       setMessage(data.hermesTriggered ? c.promptSent : c.promptQueued);
     } catch (error) {
@@ -798,6 +810,31 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                     {sendingPrompt ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     {c.send}
                   </button>
+                </div>
+
+                <div className="rounded-md border border-white/10 bg-black/25 p-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/45">{c.chatHistory}</p>
+                  <div className="mt-3 grid max-h-80 gap-3 overflow-y-auto pr-1">
+                    {chatMessages.length === 0 ? (
+                      <p className="text-sm text-white/45">{c.noChatHistory}</p>
+                    ) : (
+                      [...chatMessages].reverse().map((chat) => {
+                        const isAdmin = chat.sender === "admin";
+                        return (
+                          <div key={chat.id} className={`rounded-md border p-3 ${isAdmin ? "border-amber-300/20 bg-amber-300/10" : "border-white/10 bg-white/[0.04]"}`}>
+                            <div className="flex items-center justify-between gap-3">
+                              <p className={`text-xs font-bold uppercase tracking-[0.12em] ${isAdmin ? "text-amber-200" : "text-emerald-200"}`}>
+                                {isAdmin ? c.adminSender : c.hermesSender}
+                              </p>
+                              <p className="text-[11px] text-white/35">{new Date(chat.createdAt).toLocaleString()}</p>
+                            </div>
+                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-white/70">{chat.message}</p>
+                            {chat.status ? <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-white/35">{chat.status}</p> : null}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
             </Panel>
