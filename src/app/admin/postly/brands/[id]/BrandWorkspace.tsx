@@ -65,6 +65,7 @@ export default function BrandWorkspace({ brand }: { brand: Brand }) {
   const [items, setItems] = useState<Item[]>(brand.contentItems);
   const [logs, setLogs] = useState<AgentLog[]>(brand.agentLogs);
   const [templateForm, setTemplateForm] = useState<TemplateForm>(emptyTemplate);
+  const [templateFile, setTemplateFile] = useState<File | null>(null);
   const [prompt, setPrompt] = useState("");
   const [contentType, setContentType] = useState("POSTER");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -83,15 +84,24 @@ export default function BrandWorkspace({ brand }: { brand: Brand }) {
     setSubmittingTemplate(true);
     setMessage("");
     try {
+      const body = new FormData();
+      body.append("name", templateForm.name);
+      body.append("type", templateForm.type);
+      body.append("category", templateForm.category);
+      body.append("size", templateForm.size);
+      body.append("previewImageUrl", templateForm.previewImageUrl);
+      body.append("templateFileUrl", templateForm.templateFileUrl);
+      if (templateFile) body.append("file", templateFile);
+
       const response = await fetch(`/api/admin/postly/brands/${brand.id}/templates`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(templateForm),
+        body,
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Template save failed");
       setTemplates((current) => [data.template, ...current]);
       setTemplateForm(emptyTemplate);
+      setTemplateFile(null);
       setMessage("Template added");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Template save failed");
@@ -201,6 +211,16 @@ export default function BrandWorkspace({ brand }: { brand: Brand }) {
                   <Field label="Size" value={templateForm.size} onChange={(value) => updateTemplate("size", value)} placeholder="1080x1080" />
                 </div>
                 <Field label="Category" value={templateForm.category} onChange={(value) => updateTemplate("category", value)} placeholder="promo, education" />
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/45">Upload file</span>
+                  <input
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.svg,.pdf,.pptx,image/png,image/jpeg,image/svg+xml,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                    onChange={(event) => setTemplateFile(event.target.files?.[0] ?? null)}
+                    className="mt-2 w-full rounded-md border border-white/10 bg-black/45 px-3 py-2 text-sm text-white file:mr-3 file:rounded-md file:border-0 file:bg-amber-300 file:px-3 file:py-2 file:text-sm file:font-bold file:text-black"
+                  />
+                  <span className="mt-2 block text-xs text-white/35">{templateFile ? templateFile.name : "PNG, JPG, SVG, PDF, PPTX"}</span>
+                </label>
                 <Field label="Preview image URL" value={templateForm.previewImageUrl} onChange={(value) => updateTemplate("previewImageUrl", value)} placeholder="https://..." />
                 <Field label="Template file URL" value={templateForm.templateFileUrl} onChange={(value) => updateTemplate("templateFileUrl", value)} placeholder="Canva/Figma/file URL" />
                 <button
