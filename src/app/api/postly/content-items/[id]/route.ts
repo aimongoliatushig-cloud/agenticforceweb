@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { PostlyContentStatus, PostlyContentType } from "@prisma/client";
+import { PostlyContentType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { asDate, asString, readJson, requirePostlyCompany, writeAgentLog } from "@/lib/postly";
+import { parsePostlyContentStatus } from "@/lib/postly-status";
 
 export const dynamic = "force-dynamic";
 
@@ -9,13 +10,6 @@ function contentType(value: unknown) {
   const normalized = asString(value)?.toUpperCase();
   return normalized && Object.values(PostlyContentType).includes(normalized as PostlyContentType)
     ? (normalized as PostlyContentType)
-    : undefined;
-}
-
-function contentStatus(value: unknown) {
-  const normalized = asString(value)?.toUpperCase();
-  return normalized && Object.values(PostlyContentStatus).includes(normalized as PostlyContentStatus)
-    ? (normalized as PostlyContentStatus)
     : undefined;
 }
 
@@ -55,7 +49,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       imagePrompt: asString(body.imagePrompt),
       creativeDirection: asString(body.creativeDirection),
       scheduledAt: asDate(body.scheduledAt),
-      status: contentStatus(body.status),
+      status: parsePostlyContentStatus(body.status),
       telegramMessageId: asString(body.telegramMessageId),
       makeStatus: asString(body.makeStatus),
       facebookPostUrl: asString(body.facebookPostUrl),

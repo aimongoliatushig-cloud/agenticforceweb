@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { PostlyContentStatus, PostlyContentType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { asDate, asString, readJson, requirePostlyCompany, writeAgentLog } from "@/lib/postly";
+import { parsePostlyContentStatus } from "@/lib/postly-status";
 
 export const dynamic = "force-dynamic";
 
@@ -12,19 +13,12 @@ function contentType(value: unknown) {
     : PostlyContentType.POSTER;
 }
 
-function contentStatus(value: unknown) {
-  const normalized = asString(value)?.toUpperCase();
-  return Object.values(PostlyContentStatus).includes(normalized as PostlyContentStatus)
-    ? (normalized as PostlyContentStatus)
-    : PostlyContentStatus.PLANNED;
-}
-
 export async function GET(request: Request) {
   const context = await requirePostlyCompany();
   if ("response" in context) return context.response;
 
   const { searchParams } = new URL(request.url);
-  const status = contentStatus(searchParams.get("status"));
+  const status = parsePostlyContentStatus(searchParams.get("status"), PostlyContentStatus.PLANNED);
   const hasStatusFilter = searchParams.has("status");
 
   const items = await prisma.contentItem.findMany({
@@ -57,7 +51,7 @@ export async function POST(request: Request) {
       imagePrompt: asString(body.imagePrompt),
       creativeDirection: asString(body.creativeDirection),
       scheduledAt: asDate(body.scheduledAt),
-      status: contentStatus(body.status),
+      status: parsePostlyContentStatus(body.status, PostlyContentStatus.PLANNED),
     },
   });
 
