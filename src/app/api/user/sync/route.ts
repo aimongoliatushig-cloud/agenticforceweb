@@ -1,7 +1,14 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { isAdminEmail } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import { normalizeLocale } from "@/lib/i18n";
+
+function getPrimaryEmail(clerkUser: Awaited<ReturnType<Awaited<ReturnType<typeof clerkClient>>["users"]["getUser"]>>) {
+  const primary = clerkUser.emailAddresses.find((item) => item.id === clerkUser.primaryEmailAddressId);
+  return (primary || clerkUser.emailAddresses[0])?.emailAddress?.toLowerCase();
+}
 
 export async function POST(request: Request) {
   let clerkUser;
@@ -22,7 +29,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const email = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase();
+  const email = getPrimaryEmail(clerkUser);
   if (!email) {
     return NextResponse.json({ error: "User has no email" }, { status: 400 });
   }
@@ -38,6 +45,7 @@ export async function POST(request: Request) {
         email,
         name: clerkUser.fullName,
         avatarUrl: clerkUser.imageUrl || null,
+        role: isAdminEmail(email) ? UserRole.admin : undefined,
         locale: normalizeLocale(body.locale),
         lastSeenAt: new Date(),
       },
@@ -46,6 +54,7 @@ export async function POST(request: Request) {
         email,
         name: clerkUser.fullName,
         avatarUrl: clerkUser.imageUrl || null,
+        role: isAdminEmail(email) ? UserRole.admin : UserRole.user,
         locale: normalizeLocale(body.locale),
         lastSeenAt: new Date(),
       },

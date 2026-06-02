@@ -5,6 +5,17 @@ import { hasDatabaseUrl, prisma } from "./db";
 const defaultAdminEmails = ["nyffygodx0206@gmail.com"];
 const adminBypassCookie = "postly_admin_bypass";
 
+export function getAdminEmails() {
+  return [...defaultAdminEmails, ...(process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean)];
+}
+
+export function isAdminEmail(email?: string | null) {
+  return Boolean(email && getAdminEmails().includes(email.trim().toLowerCase()));
+}
+
 async function hasAdminBypassCookie() {
   const token = process.env.POSTLY_ADMIN_BYPASS_TOKEN?.trim();
   if (!token) return false;
@@ -44,11 +55,6 @@ export async function isAdminUser() {
     return true;
   }
 
-  const adminEmails = [...defaultAdminEmails, ...(process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean)];
-
   try {
     const session = await auth();
     if (!session.userId) {
@@ -61,7 +67,7 @@ export async function isAdminUser() {
       .map((item) => item.emailAddress.toLowerCase())
       .filter(Boolean);
 
-    if (emails.some((email) => adminEmails.includes(email))) {
+    if (emails.some((email) => isAdminEmail(email))) {
       return true;
     }
   } catch {
