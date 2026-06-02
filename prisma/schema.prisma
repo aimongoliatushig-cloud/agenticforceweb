@@ -265,3 +265,106 @@ model HermesWebhookDelivery {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+// ── Postly Content Management ──
+
+enum ContentItemStatus {
+  PLANNED
+  DRAFT
+  WAITING_APPROVAL
+  APPROVED
+  SENT_TO_MAKE
+  MEDIA_GENERATED
+  POSTED
+  REJECTED
+}
+
+enum ContentType {
+  CAROUSEL
+  POSTER
+  REEL
+}
+
+model PostlyBrand {
+  id             String   @id @default(cuid())
+  companyId      String?
+  brandName      String   @unique
+  businessType   String?
+  brandGuideline Json?    @default("{}")
+  products       Json?    @default("[]")
+  templates      Json?    @default("[]")
+  socialAccounts Json?    @default("[]")
+  makeIntegration Json?   @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  contentPlans PostlyContentPlan[]
+  contentItems PostlyContentItem[]
+
+  @@index([brandName])
+}
+
+model PostlyContentPlan {
+  id            String   @id @default(cuid())
+  brandId       String
+  monthYear     String   // e.g. "2026-06"
+  status        String   @default("active")
+  strategyNote  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  brand        PostlyBrand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  contentItems PostlyContentItem[]
+
+  @@index([brandId, monthYear])
+}
+
+model PostlyContentItem {
+  id              String            @id @default(cuid())
+  contentPlanId   String
+  brandId         String
+  companyId       String?
+
+  contentType     ContentType       @default(POSTER)
+  category        String?           // education, promo, smoke_test, etc.
+  title           String?
+  caption         String?
+  headline        String?
+  imagePrompt     String?
+  creativeDirection String?
+  templateId      String?
+
+  agentName       String?           // which Hermes agent generated this
+  telegramMessageId String?         // Telegram approval message ID
+  telegramChatId  String?           // Telegram chat ID for approval
+
+  status          ContentItemStatus @default(PLANNED)
+  makeStatus      String?           // from Make.com callback
+  revisionNote    String?           // from admin revision
+
+  assets          Json?             @default("[]")
+  postingJobs     Json?             @default("[]")
+  approvalHistory Json?             @default("[]")
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  brand        PostlyBrand       @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  contentPlan  PostlyContentPlan @relation(fields: [contentPlanId], references: [id], onDelete: Cascade)
+
+  @@index([brandId, status])
+  @@index([status, createdAt])
+}
+
+model PostlyOperationalLog {
+  id        String   @id @default(cuid())
+  event     String   // fetch_planned, generate_draft, send_approval, approval_received, sent_to_make, error
+  brandId   String?
+  itemId    String?
+  status    String   @default("success")
+  message   String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([event, createdAt])
+}
