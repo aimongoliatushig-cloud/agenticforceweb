@@ -1,7 +1,21 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import { hasDatabaseUrl, prisma } from "./db";
 
 const defaultAdminEmails = ["nyffygodx0206@gmail.com"];
+const adminBypassCookie = "postly_admin_bypass";
+
+async function hasAdminBypassCookie() {
+  const token = process.env.POSTLY_ADMIN_BYPASS_TOKEN?.trim();
+  if (!token) return false;
+
+  try {
+    const cookieStore = await cookies();
+    return cookieStore.get(adminBypassCookie)?.value === token;
+  } catch {
+    return false;
+  }
+}
 
 export async function getCurrentUserId() {
   try {
@@ -26,6 +40,10 @@ export async function getAppUser() {
 }
 
 export async function isAdminUser() {
+  if (await hasAdminBypassCookie()) {
+    return true;
+  }
+
   const adminEmails = [...defaultAdminEmails, ...(process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((email) => email.trim().toLowerCase())
