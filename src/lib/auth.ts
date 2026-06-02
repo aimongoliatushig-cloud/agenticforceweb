@@ -1,6 +1,8 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { hasDatabaseUrl, prisma } from "./db";
 
+const defaultAdminEmails = ["nyffygodx0206@gmail.com"];
+
 export async function getCurrentUserId() {
   try {
     const session = await auth();
@@ -24,10 +26,10 @@ export async function getAppUser() {
 }
 
 export async function isAdminUser() {
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+  const adminEmails = [...defaultAdminEmails, ...(process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
+    .filter(Boolean)];
 
   try {
     const session = await auth();
