@@ -15,6 +15,7 @@ import {
   Plus,
   Send,
   Sparkles,
+  Store,
   Trash2,
   X,
 } from "lucide-react";
@@ -56,6 +57,15 @@ type TemplateForm = {
   templateFileUrl: string;
 };
 
+type ProductForm = {
+  name: string;
+  description: string;
+  price: string;
+  targetCustomer: string;
+  benefits: string;
+  painPoints: string;
+};
+
 const emptyTemplate: TemplateForm = {
   name: "",
   type: "POSTER",
@@ -64,6 +74,15 @@ const emptyTemplate: TemplateForm = {
   size: "1080x1080",
   previewImageUrl: "",
   templateFileUrl: "",
+};
+
+const emptyProduct: ProductForm = {
+  name: "",
+  description: "",
+  price: "",
+  targetCustomer: "",
+  benefits: "",
+  painPoints: "",
 };
 
 const copy = {
@@ -75,6 +94,22 @@ const copy = {
     stats: { templates: "Templates", queued: "Queued", drafts: "Drafts" },
     tabs: ["Brand Profile", "Brand Voice", "Products / Services", "Templates", "Hermes Knowledge", "Content Plan"],
     brandInformation: "Brand information",
+    productsServices: "Products / Services",
+    addProduct: "Add product/service",
+    editProduct: "Edit product/service",
+    productName: "Product/service name",
+    productDescription: "Description",
+    price: "Price",
+    targetCustomer: "Target customer",
+    benefits: "Benefits",
+    painPoints: "Pain points",
+    noProducts: "No products or services added.",
+    productAdded: "Product/service added",
+    productUpdated: "Product/service updated",
+    productDeleted: "Product/service deleted",
+    productSaveFailed: "Product/service save failed",
+    productDeleteFailed: "Product/service delete failed",
+    deleteProductConfirm: (name: string) => `Delete ${name}?`,
     phone: "Phone",
     website: "Website",
     address: "Address",
@@ -129,6 +164,22 @@ const copy = {
     stats: { templates: "Темплейт", queued: "Queue", drafts: "Draft" },
     tabs: ["Брэнд profile", "Брэнд voice", "Бүтээгдэхүүн / Үйлчилгээ", "Темплейт", "Hermes knowledge", "Контент plan"],
     brandInformation: "Брэнд мэдээлэл",
+    productsServices: "Бүтээгдэхүүн / Үйлчилгээ",
+    addProduct: "Бүтээгдэхүүн нэмэх",
+    editProduct: "Бүтээгдэхүүн засах",
+    productName: "Бүтээгдэхүүн/үйлчилгээний нэр",
+    productDescription: "Тайлбар",
+    price: "Үнэ",
+    targetCustomer: "Зорилтот хэрэглэгч",
+    benefits: "Давуу талууд",
+    painPoints: "Асуудлууд",
+    noProducts: "Бүтээгдэхүүн, үйлчилгээ одоогоор алга.",
+    productAdded: "Бүтээгдэхүүн нэмэгдлээ",
+    productUpdated: "Бүтээгдэхүүн шинэчлэгдлээ",
+    productDeleted: "Бүтээгдэхүүн устлаа",
+    productSaveFailed: "Бүтээгдэхүүн хадгалахад алдаа гарлаа",
+    productDeleteFailed: "Бүтээгдэхүүн устгахад алдаа гарлаа",
+    deleteProductConfirm: (name: string) => `${name}-г устгах уу?`,
     phone: "Утас",
     website: "Website",
     address: "Хаяг",
@@ -179,11 +230,15 @@ const copy = {
 
 export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; lang?: "en" | "mn" }) {
   const [templates, setTemplates] = useState<Template[]>(brand.brandTemplates);
+  const [products, setProducts] = useState<ProductService[]>(brand.productsServicesPostly);
   const [items, setItems] = useState<Item[]>(brand.contentItems);
   const [logs, setLogs] = useState<AgentLog[]>(brand.agentLogs);
   const [templateForm, setTemplateForm] = useState<TemplateForm>(emptyTemplate);
   const [templateFile, setTemplateFile] = useState<File | null>(null);
   const [editingTemplateId, setEditingTemplateId] = useState("");
+  const [productForm, setProductForm] = useState<ProductForm>(emptyProduct);
+  const [editingProductId, setEditingProductId] = useState("");
+  const [savingProduct, setSavingProduct] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [contentType, setContentType] = useState("POSTER");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -197,6 +252,82 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
 
   function updateTemplate<K extends keyof TemplateForm>(key: K, value: TemplateForm[K]) {
     setTemplateForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateProduct<K extends keyof ProductForm>(key: K, value: ProductForm[K]) {
+    setProductForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function productPayload() {
+    return {
+      name: productForm.name,
+      description: productForm.description,
+      price: productForm.price,
+      targetCustomer: productForm.targetCustomer,
+      benefits: productForm.benefits,
+      painPoints: productForm.painPoints,
+    };
+  }
+
+  function startEditProduct(product: ProductService) {
+    setEditingProductId(product.id);
+    setProductForm({
+      name: product.name,
+      description: product.description || "",
+      price: product.price || "",
+      targetCustomer: product.targetCustomer || "",
+      benefits: product.benefits.join("\n"),
+      painPoints: product.painPoints.join("\n"),
+    });
+    setMessage("");
+  }
+
+  function cancelEditProduct() {
+    setEditingProductId("");
+    setProductForm(emptyProduct);
+    setMessage("");
+  }
+
+  async function saveProduct() {
+    setSavingProduct(true);
+    setMessage("");
+    try {
+      const response = await fetch(
+        editingProductId ? `/api/admin/postly/brands/${brand.id}/products/${editingProductId}` : `/api/admin/postly/brands/${brand.id}/products`,
+        {
+          method: editingProductId ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productPayload()),
+        }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || c.productSaveFailed);
+      setProducts((current) => editingProductId
+        ? current.map((product) => (product.id === data.product.id ? data.product : product))
+        : [data.product, ...current]);
+      setProductForm(emptyProduct);
+      setEditingProductId("");
+      setMessage(editingProductId ? c.productUpdated : c.productAdded);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : c.productSaveFailed);
+    } finally {
+      setSavingProduct(false);
+    }
+  }
+
+  async function deleteProduct(product: ProductService) {
+    if (!confirm(c.deleteProductConfirm(product.name))) return;
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/postly/brands/${brand.id}/products/${product.id}`, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || c.productDeleteFailed);
+      setProducts((current) => current.filter((item) => item.id !== product.id));
+      if (editingProductId === product.id) cancelEditProduct();
+      setMessage(c.productDeleted);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : c.productDeleteFailed);
+    }
   }
 
   async function addTemplate() {
@@ -394,6 +525,61 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                   <p className="text-xs uppercase tracking-[0.12em] text-white/35">{c.brandColors}</p>
                   <ColorRow colors={brand.brandGuideline?.brandColors || []} />
                 </div>
+              </div>
+            </Panel>
+
+            <Panel title={c.productsServices} icon={<Store className="h-5 w-5" />}>
+              <div className="grid gap-3">
+                <Field label={c.productName} value={productForm.name} onChange={(value) => updateProduct("name", value)} placeholder="Coffee subscription" />
+                <Field label={c.productDescription} value={productForm.description} onChange={(value) => updateProduct("description", value)} placeholder="Short product summary" />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label={c.price} value={productForm.price} onChange={(value) => updateProduct("price", value)} placeholder="49,000 MNT" />
+                  <Field label={c.targetCustomer} value={productForm.targetCustomer} onChange={(value) => updateProduct("targetCustomer", value)} placeholder="Busy coffee lovers" />
+                </div>
+                <Field label={c.benefits} value={productForm.benefits} onChange={(value) => updateProduct("benefits", value)} placeholder="One benefit per line" multiline />
+                <Field label={c.painPoints} value={productForm.painPoints} onChange={(value) => updateProduct("painPoints", value)} placeholder="One pain point per line" multiline />
+                <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                  <button
+                    onClick={saveProduct}
+                    disabled={savingProduct || !productForm.name.trim()}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-bold text-black transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {savingProduct ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    {editingProductId ? c.saveChanges : c.addProduct}
+                  </button>
+                  {editingProductId ? (
+                    <button onClick={cancelEditProduct} className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/10 px-4 text-sm font-bold text-white/70 transition hover:bg-white/10">
+                      <X className="h-4 w-4" />
+                      {c.cancel}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                {products.length === 0 ? (
+                  <p className="text-sm text-white/50">{c.noProducts}</p>
+                ) : (
+                  products.map((product) => (
+                    <div key={product.id} className="rounded-md border border-white/10 bg-black/25 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold">{product.name}</p>
+                          <p className="mt-1 text-xs text-white/45">{[product.price, product.targetCustomer].filter(Boolean).join(" · ") || product.status}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => startEditProduct(product)} className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-white/60 hover:bg-white/10" title={c.editProduct}>
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => deleteProduct(product)} className="grid h-8 w-8 place-items-center rounded-md border border-red-400/20 text-red-200 hover:bg-red-400/10" title={c.deleteProductConfirm(product.name)}>
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      {product.description ? <p className="mt-2 text-sm leading-5 text-white/55">{product.description}</p> : null}
+                    </div>
+                  ))
+                )}
               </div>
             </Panel>
 
@@ -609,16 +795,38 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  multiline = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  multiline?: boolean;
+}) {
   return (
     <label className="block">
       <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/45">{label}</span>
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        className="mt-2 h-11 w-full rounded-md border border-white/10 bg-black/45 px-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-amber-300/70"
-      />
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          rows={3}
+          className="mt-2 w-full rounded-md border border-white/10 bg-black/45 px-3 py-3 text-sm leading-5 text-white outline-none transition placeholder:text-white/25 focus:border-amber-300/70"
+        />
+      ) : (
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          className="mt-2 h-11 w-full rounded-md border border-white/10 bg-black/45 px-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-amber-300/70"
+        />
+      )}
     </label>
   );
 }
