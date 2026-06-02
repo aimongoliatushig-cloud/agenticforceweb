@@ -6,7 +6,17 @@ import BrandWorkspace from "./BrandWorkspace";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPostlyBrandPage({ params }: { params: Promise<{ id: string }> }) {
+function adminLang(value: unknown): "en" | "mn" {
+  return value === "mn" ? "mn" : "en";
+}
+
+export default async function AdminPostlyBrandPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ lang?: string }>;
+}) {
   const allowed = await isAdminUser();
   if (!allowed) redirect("/en");
   if (!hasDatabaseUrl()) {
@@ -25,6 +35,8 @@ export default async function AdminPostlyBrandPage({ params }: { params: Promise
   }
 
   const { id } = await params;
+  const { lang } = await searchParams;
+  const currentLang = adminLang(lang);
   const brand = await prisma.companyProfile.findUnique({
     where: { id },
     include: {
@@ -52,5 +64,5 @@ export default async function AdminPostlyBrandPage({ params }: { params: Promise
 
   if (!brand) notFound();
 
-  return <BrandWorkspace brand={brand} />;
+  return <BrandWorkspace brand={brand} lang={currentLang} />;
 }

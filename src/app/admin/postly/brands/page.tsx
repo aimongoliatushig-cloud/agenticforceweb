@@ -6,10 +6,16 @@ import BrandsManager from "./BrandsManager";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPostlyBrandsPage() {
+function adminLang(value: unknown): "en" | "mn" {
+  return value === "mn" ? "mn" : "en";
+}
+
+export default async function AdminPostlyBrandsPage({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
   const allowed = await isAdminUser();
   if (!allowed) redirect("/en");
 
+  const { lang } = await searchParams;
+  const currentLang = adminLang(lang);
   const brands = hasDatabaseUrl()
     ? (await prisma.companyProfile.findMany({
         orderBy: [{ companyName: "asc" }, { createdAt: "desc" }],
@@ -51,7 +57,7 @@ export default async function AdminPostlyBrandsPage() {
     : [];
 
   return (
-    <PostlyAdminShell active="brands">
+    <PostlyAdminShell active="brands" lang={currentLang} currentPath="/admin/postly/brands">
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {!hasDatabaseUrl() ? (
           <div className="mt-8 rounded-lg border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100">

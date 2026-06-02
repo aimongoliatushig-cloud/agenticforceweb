@@ -64,7 +64,7 @@ const emptyTemplate: TemplateForm = {
   templateFileUrl: "",
 };
 
-export default function BrandWorkspace({ brand }: { brand: Brand }) {
+export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; lang?: "en" | "mn" }) {
   const [templates, setTemplates] = useState<Template[]>(brand.brandTemplates);
   const [items, setItems] = useState<Item[]>(brand.contentItems);
   const [logs, setLogs] = useState<AgentLog[]>(brand.agentLogs);
@@ -214,7 +214,7 @@ export default function BrandWorkspace({ brand }: { brand: Brand }) {
   }
 
   return (
-    <PostlyAdminShell active="chat">
+    <PostlyAdminShell active="chat" lang={lang} currentPath={`/admin/postly/brands/${brand.id}`}>
       <main className="mx-auto max-w-[1500px] px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
