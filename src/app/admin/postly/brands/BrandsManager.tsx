@@ -183,6 +183,7 @@ function formFromBrand(brand: Brand): FormState {
 export default function BrandsManager({ initialBrands, lang = "en" }: { initialBrands: Brand[]; lang?: "en" | "mn" }) {
   const [brands, setBrands] = useState(initialBrands);
   const [query, setQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [form, setForm] = useState<FormState>(emptyForm);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -190,6 +191,9 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
   const [message, setMessage] = useState("");
   const c = copy[lang];
   const withLang = (href: string) => `${href}?lang=${lang}`;
+  const viewLabels = lang === "mn"
+    ? { grid: "Grid харагдац", list: "List харагдац" }
+    : { grid: "Grid view", list: "List view" };
 
   const filteredBrands = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -297,16 +301,32 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
           />
         </label>
         <div className="flex items-center gap-2">
-          <button className="grid h-10 w-10 place-items-center rounded-md border border-amber-300/40 bg-amber-300/10 text-amber-200">
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            title={viewLabels.grid}
+            aria-pressed={viewMode === "grid"}
+            className={`grid h-10 w-10 place-items-center rounded-md border transition ${
+              viewMode === "grid" ? "border-amber-300/40 bg-amber-300/10 text-amber-200" : "border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/10"
+            }`}
+          >
             <Grid2X2 className="h-4 w-4" />
           </button>
-          <button className="grid h-10 w-10 place-items-center rounded-md border border-white/10 bg-white/[0.04] text-white/55">
+          <button
+            type="button"
+            onClick={() => setViewMode("list")}
+            title={viewLabels.list}
+            aria-pressed={viewMode === "list"}
+            className={`grid h-10 w-10 place-items-center rounded-md border transition ${
+              viewMode === "list" ? "border-amber-300/40 bg-amber-300/10 text-amber-200" : "border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/10"
+            }`}
+          >
             <ListFilter className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className={viewMode === "grid" ? "mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3" : "mt-6 grid gap-3"}>
         {filteredBrands.length === 0 ? (
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5 text-sm text-white/55">
             {c.empty}
@@ -315,7 +335,9 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
           filteredBrands.map((brand) => (
             <article
               key={brand.id}
-              className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:border-amber-300/40 hover:bg-white/[0.06]"
+              className={`overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:border-amber-300/40 hover:bg-white/[0.06] ${
+                viewMode === "list" ? "lg:grid lg:grid-cols-[1fr_260px]" : ""
+              }`}
             >
               <Link href={withLang(`/admin/postly/brands/${brand.id}`)} className="block p-5">
                 <div>
@@ -336,7 +358,7 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
                   <p>{c.templates}: {brand._count.brandTemplates}</p>
                 </div>
               </Link>
-              <div className="grid grid-cols-5 border-t border-white/10">
+              <div className={`grid grid-cols-5 border-t border-white/10 ${viewMode === "list" ? "lg:border-l lg:border-t-0" : ""}`}>
                 <IconLink href={withLang(`/admin/postly/brands/${brand.id}`)} label="Chat" icon={<MessageCircle className="h-4 w-4" />} />
                 <IconLink href={withLang(`/admin/postly/brands/${brand.id}`)} label="Templates" icon={<Store className="h-4 w-4" />} />
                 <button onClick={() => openEdit(brand)} className="flex h-11 items-center justify-center border-r border-white/10 text-amber-200 hover:bg-white/5">
