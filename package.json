@@ -9,6 +9,10 @@
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "seed:postly": "node prisma/seed-postly.mjs",
+    "seed:postly:random": "node scripts/seed-random-postly-brand.mjs",
+    "test:postly": "node scripts/test-postly-backend.mjs",
+    "test:postly:flow": "node scripts/test-postly-flow.mjs",
     "test:hermes": "node scripts/test-hermes-webhook.mjs",
     "postinstall": "prisma generate"
   },
