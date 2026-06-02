@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { isAdminEmail } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import { normalizeLocale } from "@/lib/i18n";
 
@@ -65,6 +67,11 @@ export function requireSecret(request: Request, envName: "HERMES_AGENT_SECRET" |
   return null;
 }
 
+function getClerkPrimaryEmail(clerkUser: Awaited<ReturnType<Awaited<ReturnType<typeof clerkClient>>["users"]["getUser"]>>) {
+  const primary = clerkUser.emailAddresses.find((item) => item.id === clerkUser.primaryEmailAddressId);
+  return (primary || clerkUser.emailAddresses[0])?.emailAddress?.toLowerCase();
+}
+
 export async function requirePostlyCompany(locale?: string) {
   if (!hasDatabaseUrl()) {
     return { response: NextResponse.json({ error: "DATABASE_URL is not configured" }, { status: 503 }) };
@@ -77,7 +84,7 @@ export async function requirePostlyCompany(locale?: string) {
 
   const client = await clerkClient();
   const clerkUser = await client.users.getUser(session.userId);
-  const email = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase();
+  const email = getClerkPrimaryEmail(clerkUser);
   if (!email) {
     return { response: NextResponse.json({ error: "User email is required" }, { status: 401 }) };
   }
@@ -88,6 +95,7 @@ export async function requirePostlyCompany(locale?: string) {
       email,
       name: clerkUser.fullName || clerkUser.firstName || email,
       avatarUrl: clerkUser.imageUrl || null,
+      role: isAdminEmail(email) ? UserRole.admin : undefined,
       locale: normalizeLocale(locale),
       lastSeenAt: new Date(),
     },
@@ -96,6 +104,7 @@ export async function requirePostlyCompany(locale?: string) {
       email,
       name: clerkUser.fullName || clerkUser.firstName || email,
       avatarUrl: clerkUser.imageUrl || null,
+      role: isAdminEmail(email) ? UserRole.admin : UserRole.user,
       locale: normalizeLocale(locale),
       lastSeenAt: new Date(),
     },
