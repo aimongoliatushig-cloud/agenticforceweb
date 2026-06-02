@@ -2,6 +2,9 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+function isAdminPath(request: NextRequest) {
+  return request.nextUrl.pathname === "/admin" || request.nextUrl.pathname.startsWith("/admin/");
+}
 const clerkConfigured = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
 );
@@ -17,7 +20,7 @@ function hasAdminBypass(request: NextRequest) {
 }
 
 function handleAdminBypass(request: NextRequest) {
-  if (!isAdminRoute(request)) return null;
+  if (!isAdminPath(request)) return null;
 
   const token = adminBypassToken();
   if (!token) return null;
@@ -57,7 +60,7 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
   const bypassResponse = handleAdminBypass(request);
   if (bypassResponse) return bypassResponse;
 
-  if (!clerkConfigured && isAdminRoute(request)) {
+  if (!clerkConfigured && isAdminPath(request)) {
     return NextResponse.redirect(new URL("/en", request.url));
   }
 
