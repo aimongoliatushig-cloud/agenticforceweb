@@ -30,6 +30,19 @@ export function templatePlatform(value: unknown) {
     : undefined;
 }
 
+export function getTemplateStorageConfig() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET?.trim() || "postly-templates";
+
+  return {
+    bucket,
+    hasSupabaseUrl: Boolean(supabaseUrl),
+    hasServiceRoleKey: Boolean(supabaseKey),
+    ready: Boolean(supabaseUrl && supabaseKey),
+  };
+}
+
 function safeFileName(value: string) {
   const cleaned = value
     .toLowerCase()
@@ -45,7 +58,7 @@ function publicStorageUrl(input: { supabaseUrl: string; bucket: string; path: st
 export async function uploadTemplateFile(input: { companyId: string; file: File }) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET?.trim() || "postly-templates";
+  const bucket = getTemplateStorageConfig().bucket;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error("Supabase Storage service key is not configured");
