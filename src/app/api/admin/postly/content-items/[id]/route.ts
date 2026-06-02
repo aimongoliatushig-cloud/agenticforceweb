@@ -35,6 +35,14 @@ function platform(value: unknown) {
     : undefined;
 }
 
+const contentItemInclude = {
+  company: true,
+  template: true,
+  approvalRequests: { orderBy: { createdAt: "desc" as const }, take: 3 },
+  postingJobs: { orderBy: { createdAt: "desc" as const }, take: 3 },
+  postingLogs: { orderBy: { createdAt: "desc" as const }, take: 3 },
+};
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -46,54 +54,58 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const nextStatus = contentStatus(body.status);
   const revisionNote = asString(body.revisionNote);
-  const item = await prisma.contentItem.update({
-    where: { id },
-    data: {
-      title: asString(body.title),
-      caption: asString(body.caption),
-      headline: asString(body.headline),
-      imagePrompt: asString(body.imagePrompt),
-      creativeDirection: asString(body.creativeDirection),
-      category: asString(body.category),
-      scheduledAt: asDate(body.scheduledAt),
-      status: nextStatus,
-      errorMessage: nextStatus === PostlyContentStatus.REJECTED ? revisionNote : undefined,
-      facebookPostUrl: asString(body.facebookPostUrl),
-      instagramPostUrl: asString(body.instagramPostUrl),
-    },
-    include: {
-      company: true,
-      template: true,
-      approvalRequests: { orderBy: { createdAt: "desc" }, take: 3 },
-      postingJobs: { orderBy: { createdAt: "desc" }, take: 3 },
-      postingLogs: { orderBy: { createdAt: "desc" }, take: 3 },
-    },
+  const postedUrl = asString(body.postedUrl) || asString(body.facebookPostUrl) || asString(body.instagramPostUrl);
+  const currentPlatform = platform(body.platform);
+  const statusChanged = Boolean(nextStatus && nextStatus !== existing.status);
+
+  const item = await prisma.$transaction(async (tx) => {
+    const savedItem = await tx.contentItem.update({
+      where: { id },
+      data: {
+        title: asString(body.title),
+        caption: asString(body.caption),
+        headline: asString(body.headline),
+        imagePrompt: asString(body.imagePrompt),
+        creativeDirection: asString(body.creativeDirection),
+        category: asString(body.category),
+        scheduledAt: asDate(body.scheduledAt),
+        status: nextStatus,
+        errorMessage: nextStatus === PostlyContentStatus.REJECTED ? revisionNote : undefined,
+        facebookPostUrl: asString(body.facebookPostUrl) || (currentPlatform !== PostlyPlatform.INSTAGRAM ? postedUrl : undefined),
+        instagramPostUrl: asString(body.instagramPostUrl) || (currentPlatform === PostlyPlatform.INSTAGRAM ? postedUrl : undefined),
+      },
+    });
+
+    const approvalStatus = approvalStatusFor(nextStatus);
+    if (statusChanged && approvalStatus) {
+      await tx.approvalRequest.create({
+        data: {
+          contentItemId: savedItem.id,
+          status: approvalStatus,
+          approvedAt: approvalStatus === PostlyApprovalStatus.APPROVED ? new Date() : undefined,
+          revisionNote,
+        },
+      });
+    }
+
+    if (nextStatus === PostlyContentStatus.POSTED && (statusChanged || postedUrl)) {
+      await tx.postingLog.create({
+        data: {
+          companyId: savedItem.companyId,
+          contentItemId: savedItem.id,
+          platform: currentPlatform,
+          status: "posted",
+          postedUrl,
+          rawResponse: { source: "postly_admin", note: asString(body.publishNote) },
+        },
+      });
+    }
+
+    return tx.contentItem.findUniqueOrThrow({
+      where: { id: savedItem.id },
+      include: contentItemInclude,
+    });
   });
-
-  const approvalStatus = approvalStatusFor(nextStatus);
-  if (approvalStatus) {
-    await prisma.approvalRequest.create({
-      data: {
-        contentItemId: item.id,
-        status: approvalStatus,
-        approvedAt: approvalStatus === PostlyApprovalStatus.APPROVED ? new Date() : undefined,
-        revisionNote,
-      },
-    });
-  }
-
-  if (nextStatus === PostlyContentStatus.POSTED) {
-    await prisma.postingLog.create({
-      data: {
-        companyId: item.companyId,
-        contentItemId: item.id,
-        platform: platform(body.platform),
-        status: "posted",
-        postedUrl: asString(body.postedUrl) || asString(body.facebookPostUrl) || asString(body.instagramPostUrl),
-        rawResponse: { source: "postly_admin", note: asString(body.publishNote) },
-      },
-    });
-  }
 
   await writeAgentLog({
     companyId: item.companyId,
