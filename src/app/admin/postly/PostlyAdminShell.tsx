@@ -16,7 +16,7 @@ import { UserSync } from "@/components/UserSync";
 const navItems = [
   { key: "dashboard", labelEn: "Dashboard", labelMn: "Хянах самбар", href: "/admin", icon: Gauge },
   { key: "brands", labelEn: "Brands", labelMn: "Брэндүүд", href: "/admin/postly/brands", icon: Store },
-  { key: "templates", labelEn: "Templates", labelMn: "Темплейтүүд", href: "/admin/postly/brands", icon: Layers3 },
+  { key: "templates", labelEn: "Templates", labelMn: "Темплейтүүд", href: "/admin/postly/templates", icon: Layers3 },
   { key: "chat", labelEn: "Hermes Chat", labelMn: "Hermes чат", href: "/admin/postly/brands", icon: MessageSquareText },
   { key: "calendar", labelEn: "Content Calendar", labelMn: "Контент календарь", href: "/admin/postly/calendar", icon: CalendarDays },
   { key: "approval", labelEn: "Approval", labelMn: "Зөвшөөрөл", href: "/admin/postly/approval", icon: CheckSquare },
