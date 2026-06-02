@@ -1,9 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { isAdminEmail } from "@/lib/auth";
-import { hasDatabaseUrl, prisma } from "@/lib/db";
-import { normalizeLocale } from "@/lib/i18n";
+import { hasDatabaseUrl } from "@/lib/db";
+import { syncUserRecord } from "@/lib/user-sync";
 
 function getPrimaryEmail(clerkUser: Awaited<ReturnType<Awaited<ReturnType<typeof clerkClient>>["users"]["getUser"]>>) {
   const primary = clerkUser.emailAddresses.find((item) => item.id === clerkUser.primaryEmailAddressId);
@@ -39,25 +37,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const user = await prisma.user.upsert({
-      where: { clerkUserId: clerkUser.id },
-      update: {
-        email,
-        name: clerkUser.fullName,
-        avatarUrl: clerkUser.imageUrl || null,
-        role: isAdminEmail(email) ? UserRole.admin : undefined,
-        locale: normalizeLocale(body.locale),
-        lastSeenAt: new Date(),
-      },
-      create: {
-        clerkUserId: clerkUser.id,
-        email,
-        name: clerkUser.fullName,
-        avatarUrl: clerkUser.imageUrl || null,
-        role: isAdminEmail(email) ? UserRole.admin : UserRole.user,
-        locale: normalizeLocale(body.locale),
-        lastSeenAt: new Date(),
-      },
+    const user = await syncUserRecord({
+      clerkUserId: clerkUser.id,
+      email,
+      name: clerkUser.fullName || clerkUser.firstName || email,
+      avatarUrl: clerkUser.imageUrl || null,
+      locale: typeof body.locale === "string" ? body.locale : undefined,
     });
 
     return NextResponse.json({ ok: true, id: user.id });

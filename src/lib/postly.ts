@@ -1,10 +1,8 @@
 import crypto from "crypto";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { isAdminEmail } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
-import { normalizeLocale } from "@/lib/i18n";
+import { syncUserRecord } from "@/lib/user-sync";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -89,25 +87,12 @@ export async function requirePostlyCompany(locale?: string) {
     return { response: NextResponse.json({ error: "User email is required" }, { status: 401 }) };
   }
 
-  const user = await prisma.user.upsert({
-    where: { clerkUserId: clerkUser.id },
-    update: {
-      email,
-      name: clerkUser.fullName || clerkUser.firstName || email,
-      avatarUrl: clerkUser.imageUrl || null,
-      role: isAdminEmail(email) ? UserRole.admin : undefined,
-      locale: normalizeLocale(locale),
-      lastSeenAt: new Date(),
-    },
-    create: {
-      clerkUserId: clerkUser.id,
-      email,
-      name: clerkUser.fullName || clerkUser.firstName || email,
-      avatarUrl: clerkUser.imageUrl || null,
-      role: isAdminEmail(email) ? UserRole.admin : UserRole.user,
-      locale: normalizeLocale(locale),
-      lastSeenAt: new Date(),
-    },
+  const user = await syncUserRecord({
+    clerkUserId: clerkUser.id,
+    email,
+    name: clerkUser.fullName || clerkUser.firstName || email,
+    avatarUrl: clerkUser.imageUrl || null,
+    locale,
   });
 
   const company = await prisma.companyProfile.upsert({
