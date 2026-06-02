@@ -529,7 +529,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
       <main className="mx-auto max-w-[1500px] px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <Link href="/admin/postly/brands" className="text-sm text-amber-300 hover:text-amber-200">
+            <Link href={`/admin/postly/brands?lang=${lang}`} className="text-sm text-amber-300 hover:text-amber-200">
               {c.back}
             </Link>
             <div className="mt-5 flex flex-wrap items-center gap-3">

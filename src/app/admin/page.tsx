@@ -136,6 +136,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const currentLang = adminLang(lang);
   const copy = dashboardCopy[currentLang];
   const data = await getAdminData();
+  const withLang = (href: string) => `${href}?lang=${currentLang}`;
   const cards = [
     { label: copy.cards.users, value: data.users, icon: Users },
     { label: copy.cards.subscribers, value: data.subscribers, icon: Mail },
@@ -156,7 +157,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </p>
           </div>
           <Link
-            href="/admin/postly/brands"
+            href={withLang("/admin/postly/brands")}
             className="inline-flex h-10 items-center justify-center rounded-md bg-amber-300 px-4 text-sm font-bold text-black transition hover:bg-amber-200"
           >
             {copy.createContent}
@@ -186,7 +187,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <Link
-            href="/admin/postly/brands"
+            href={withLang("/admin/postly/brands")}
             className="rounded-lg border border-amber-300/25 bg-amber-300/10 p-5 transition hover:border-amber-200/60 hover:bg-amber-300/15"
           >
             <div className="flex items-center gap-3">
@@ -198,7 +199,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </div>
           </Link>
           <Link
-            href="/admin/postly/integrations"
+            href={withLang("/admin/postly/integrations")}
             className="rounded-lg border border-white/10 bg-white/[0.04] p-5 transition hover:border-white/25 hover:bg-white/[0.06]"
           >
             <div className="flex items-center gap-3">
