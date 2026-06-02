@@ -9,7 +9,9 @@ export function Footer() {
   const pathname = usePathname();
   const locale = normalizeLocale(pathname?.split("/")[1]);
 
-  if (pathname?.startsWith("/aithon2026")) {
+  const isDashboard = /^\/(en|mn)\/dashboard(\/|$)/.test(pathname ?? "");
+
+  if (pathname?.startsWith("/aithon2026") || pathname?.startsWith("/admin") || isDashboard) {
     return null;
   }
 

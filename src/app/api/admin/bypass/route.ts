@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     sameSite: "lax",
     secure: true,
     maxAge: 60 * 60 * 12,
-    path: "/admin",
+    path: "/",
   });
 
   return response;
