@@ -37,7 +37,9 @@ export function Header() {
     };
   }, [isMenuOpen]);
 
-  if (pathname?.startsWith("/aithon2026")) {
+  const isDashboard = /^\/(en|mn)\/dashboard(\/|$)/.test(pathname ?? "");
+
+  if (pathname?.startsWith("/aithon2026") || pathname?.startsWith("/admin") || isDashboard) {
     return null;
   }
 

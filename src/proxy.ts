@@ -35,7 +35,7 @@ function handleAdminBypass(request: NextRequest) {
       sameSite: "lax",
       secure: true,
       maxAge: 60 * 60 * 12,
-      path: "/admin",
+      path: "/",
     });
     return response;
   }
