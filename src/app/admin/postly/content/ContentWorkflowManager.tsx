@@ -129,6 +129,35 @@ const copy: Record<Locale, Record<Mode, Copy>> = {
 
 const statuses = ["PLANNED", "DRAFT_GENERATED", "WAITING_APPROVAL", "APPROVED", "REJECTED", "NEEDS_REVISION", "SCHEDULED", "POSTED", "FAILED"];
 
+const statusLabels: Record<Locale, Record<string, string>> = {
+  en: {
+    PLANNED: "Planned",
+    DRAFT_GENERATED: "Draft",
+    WAITING_APPROVAL: "Pending approval",
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+    NEEDS_REVISION: "Needs revision",
+    SCHEDULED: "Scheduled",
+    POSTED: "Published",
+    FAILED: "Failed",
+  },
+  mn: {
+    PLANNED: "Төлөвлөсөн",
+    DRAFT_GENERATED: "Draft",
+    WAITING_APPROVAL: "Зөвшөөрөл хүлээж буй",
+    APPROVED: "Батлагдсан",
+    REJECTED: "Татгалзсан",
+    NEEDS_REVISION: "Засвар шаардсан",
+    SCHEDULED: "Хуваарьт",
+    POSTED: "Нийтэлсэн",
+    FAILED: "Алдаатай",
+  },
+};
+
+function statusLabel(locale: Locale, status: string) {
+  return statusLabels[locale][status] || status;
+}
+
 function dateInput(value: string | null) {
   if (!value) return "";
   const date = new Date(value);
@@ -202,7 +231,7 @@ export default function ContentWorkflowManager({ initialItems, mode, lang }: { i
         <div className="flex flex-wrap gap-2">
           {statuses.filter((status) => counts[status]).map((status) => (
             <span key={status} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-white/65">
-              {status}: {counts[status]}
+              {statusLabel(lang, status)}: {counts[status]}
             </span>
           ))}
         </div>
@@ -262,7 +291,7 @@ export default function ContentWorkflowManager({ initialItems, mode, lang }: { i
                         className="h-10 rounded-md border border-white/10 bg-black/45 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-amber-300/70"
                       >
                         {statuses.map((status) => (
-                          <option key={status} value={status}>{status}</option>
+                          <option key={status} value={status}>{statusLabel(lang, status)}</option>
                         ))}
                       </select>
                     </label>

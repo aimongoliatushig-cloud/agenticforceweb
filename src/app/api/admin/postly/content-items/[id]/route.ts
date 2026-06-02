@@ -3,6 +3,7 @@ import { PostlyApprovalStatus, PostlyContentStatus, PostlyPlatform } from "@pris
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import { asDate, asString, readJson, writeAgentLog } from "@/lib/postly";
+import { parsePostlyContentStatus } from "@/lib/postly-status";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +12,6 @@ async function requireAdmin() {
   const allowed = await isAdminUser();
   if (!allowed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   return null;
-}
-
-function contentStatus(value: unknown) {
-  const normalized = asString(value)?.toUpperCase();
-  return normalized && Object.values(PostlyContentStatus).includes(normalized as PostlyContentStatus)
-    ? (normalized as PostlyContentStatus)
-    : undefined;
 }
 
 function approvalStatusFor(status?: PostlyContentStatus) {
@@ -52,7 +46,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const existing = await prisma.contentItem.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Content item not found" }, { status: 404 });
 
-  const nextStatus = contentStatus(body.status);
+  const nextStatus = parsePostlyContentStatus(body.status);
   const revisionNote = asString(body.revisionNote);
   const postedUrl = asString(body.postedUrl) || asString(body.facebookPostUrl) || asString(body.instagramPostUrl);
   const currentPlatform = platform(body.platform);

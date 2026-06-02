@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { PostlyContentStatus } from "@prisma/client";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import { asString, readJson, requireSecret, writeAgentLog } from "@/lib/postly";
+import { parsePostlyContentStatus } from "@/lib/postly-status";
 
 export const dynamic = "force-dynamic";
 
 function nextStatus(body: Record<string, unknown>) {
-  const requested = asString(body.status)?.toUpperCase();
+  const requested = parsePostlyContentStatus(body.status);
   if (requested === PostlyContentStatus.WAITING_APPROVAL) return PostlyContentStatus.WAITING_APPROVAL;
   if (requested === PostlyContentStatus.DRAFT_GENERATED) return PostlyContentStatus.DRAFT_GENERATED;
   return asString(body.telegramMessageId) ? PostlyContentStatus.WAITING_APPROVAL : PostlyContentStatus.DRAFT_GENERATED;

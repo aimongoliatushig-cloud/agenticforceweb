@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { PostlyContentStatus } from "@prisma/client";
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
+import { parsePostlyContentStatus } from "@/lib/postly-status";
 
 export const dynamic = "force-dynamic";
 
@@ -12,19 +12,12 @@ async function requireAdmin() {
   return null;
 }
 
-function contentStatus(value: string | null) {
-  const normalized = value?.toUpperCase();
-  return normalized && Object.values(PostlyContentStatus).includes(normalized as PostlyContentStatus)
-    ? (normalized as PostlyContentStatus)
-    : undefined;
-}
-
 export async function GET(request: Request) {
   const denied = await requireAdmin();
   if (denied) return denied;
 
   const { searchParams } = new URL(request.url);
-  const status = contentStatus(searchParams.get("status"));
+  const status = parsePostlyContentStatus(searchParams.get("status"));
   const brandId = searchParams.get("brandId") || undefined;
 
   const items = await prisma.contentItem.findMany({
