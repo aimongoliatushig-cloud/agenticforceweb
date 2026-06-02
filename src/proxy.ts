@@ -5,14 +5,58 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const clerkConfigured = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
 );
+const adminBypassCookie = "postly_admin_bypass";
+
+function adminBypassToken() {
+  return process.env.POSTLY_ADMIN_BYPASS_TOKEN?.trim();
+}
+
+function hasAdminBypass(request: NextRequest) {
+  const token = adminBypassToken();
+  return Boolean(token && request.cookies.get(adminBypassCookie)?.value === token);
+}
+
+function handleAdminBypass(request: NextRequest) {
+  if (!isAdminRoute(request)) return null;
+
+  const token = adminBypassToken();
+  if (!token) return null;
+
+  const provided = request.nextUrl.searchParams.get("postly_admin_token");
+  if (provided === token) {
+    const cleanUrl = request.nextUrl.clone();
+    cleanUrl.searchParams.delete("postly_admin_token");
+    const response = NextResponse.redirect(cleanUrl);
+    response.cookies.set(adminBypassCookie, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: true,
+      maxAge: 60 * 60 * 12,
+      path: "/admin",
+    });
+    return response;
+  }
+
+  return hasAdminBypass(request) ? NextResponse.next() : null;
+}
 
 const clerkProxy = clerkMiddleware(async (auth, request) => {
+  const localeHomeMatch = request.nextUrl.pathname.match(/^\/(en|mn)\/?$/);
+  const { userId } = await auth();
+
+  if (userId && localeHomeMatch) {
+    return NextResponse.redirect(new URL(`/${localeHomeMatch[1]}/dashboard`, request.url));
+  }
+
   if (isAdminRoute(request)) {
     await auth.protect();
   }
 });
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  const bypassResponse = handleAdminBypass(request);
+  if (bypassResponse) return bypassResponse;
+
   if (!clerkConfigured && isAdminRoute(request)) {
     return NextResponse.redirect(new URL("/en", request.url));
   }
