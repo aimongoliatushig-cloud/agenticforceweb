@@ -39,9 +39,11 @@ export async function isAdminUser() {
 
     const client = await clerkClient();
     const clerkUser = await client.users.getUser(session.userId);
-    const email = clerkUser?.emailAddresses[0]?.emailAddress.toLowerCase();
+    const emails = clerkUser.emailAddresses
+      .map((item) => item.emailAddress.toLowerCase())
+      .filter(Boolean);
 
-    if (email && adminEmails.includes(email)) {
+    if (emails.some((email) => adminEmails.includes(email))) {
       return true;
     }
   } catch {
