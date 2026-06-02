@@ -64,6 +64,115 @@ const emptyTemplate: TemplateForm = {
   templateFileUrl: "",
 };
 
+const copy = {
+  en: {
+    back: "Back to brands",
+    unnamed: "Unnamed brand",
+    active: "Active",
+    fallbackDescription: "Manage profile, templates, content, and Hermes chat for this brand.",
+    stats: { templates: "Templates", queued: "Queued", drafts: "Drafts" },
+    tabs: ["Brand Profile", "Brand Voice", "Products / Services", "Templates", "Hermes Knowledge", "Content Plan"],
+    brandInformation: "Brand information",
+    phone: "Phone",
+    website: "Website",
+    address: "Address",
+    tone: "Tone",
+    brandColors: "Brand colors",
+    editTemplate: "Edit template",
+    addTemplate: "Add template",
+    name: "Name",
+    type: "Type",
+    size: "Size",
+    category: "Category",
+    uploadFile: "Upload file",
+    previewUrl: "Preview image URL",
+    fileUrl: "Template file URL",
+    saveChanges: "Save changes",
+    cancel: "Cancel",
+    noTemplates: "No templates added.",
+    contentQueue: "Content queue",
+    noContent: "No content items yet.",
+    untitled: "Untitled content",
+    content: "content",
+    hermesChat: "Hermes chat",
+    hermesContext: "Hermes will use this brand context",
+    business: "business",
+    toneMissing: "brand tone not set",
+    promptPlaceholder: "Example: Create 5 Facebook post ideas for Luna Brew in Mongolian with captions and image prompts. Include a premium coffee subscription CTA.",
+    noSpecificTemplate: "No specific template",
+    send: "Send",
+    recentActivity: "Recent activity",
+    noLogs: "No agent logs yet.",
+    templateAdded: "Template added",
+    templateUpdated: "Template updated",
+    templateDeleted: "Template deleted",
+    templateSaveFailed: "Template save failed",
+    templateUpdateFailed: "Template update failed",
+    templateDeleteFailed: "Template delete failed",
+    deleteTemplateConfirm: (name: string) => `Delete ${name}?`,
+    promptRequiredFailed: "Prompt send failed",
+    promptSent: "Prompt sent to Hermes",
+    promptQueued: "Prompt queued for Hermes cron",
+    preview: "Preview",
+    edit: "Edit template",
+    delete: "Delete template",
+    unavailable: "unavailable",
+  },
+  mn: {
+    back: "Брэндүүд рүү буцах",
+    unnamed: "Нэргүй брэнд",
+    active: "Идэвхтэй",
+    fallbackDescription: "Энэ брэндийн profile, template, content, Hermes chat-ийг удирдана.",
+    stats: { templates: "Темплейт", queued: "Queue", drafts: "Draft" },
+    tabs: ["Брэнд profile", "Брэнд voice", "Бүтээгдэхүүн / Үйлчилгээ", "Темплейт", "Hermes knowledge", "Контент plan"],
+    brandInformation: "Брэнд мэдээлэл",
+    phone: "Утас",
+    website: "Website",
+    address: "Хаяг",
+    tone: "Tone",
+    brandColors: "Брэнд өнгө",
+    editTemplate: "Темплейт засах",
+    addTemplate: "Темплейт нэмэх",
+    name: "Нэр",
+    type: "Төрөл",
+    size: "Хэмжээ",
+    category: "Ангилал",
+    uploadFile: "Файл upload хийх",
+    previewUrl: "Preview image URL",
+    fileUrl: "Template file URL",
+    saveChanges: "Өөрчлөлт хадгалах",
+    cancel: "Болих",
+    noTemplates: "Темплейт одоогоор алга.",
+    contentQueue: "Контент queue",
+    noContent: "Контент item одоогоор алга.",
+    untitled: "Гарчиггүй контент",
+    content: "контент",
+    hermesChat: "Hermes чат",
+    hermesContext: "Hermes энэ брэндийн context-ийг ашиглана",
+    business: "бизнес",
+    toneMissing: "брэндийн tone тохируулаагүй",
+    promptPlaceholder: "Жишээ: Luna Brew-д зориулж Facebook-ийн 5 постын санаа, caption, image prompt-уудыг Монгол хэлээр гарга. Premium coffee subscription CTA оруул.",
+    noSpecificTemplate: "Тодорхой template сонгоогүй",
+    send: "Илгээх",
+    recentActivity: "Сүүлийн activity",
+    noLogs: "Agent log одоогоор алга.",
+    templateAdded: "Темплейт нэмэгдлээ",
+    templateUpdated: "Темплейт шинэчлэгдлээ",
+    templateDeleted: "Темплейт устлаа",
+    templateSaveFailed: "Темплейт хадгалахад алдаа гарлаа",
+    templateUpdateFailed: "Темплейт шинэчлэхэд алдаа гарлаа",
+    templateDeleteFailed: "Темплейт устгахад алдаа гарлаа",
+    deleteTemplateConfirm: (name: string) => `${name} темплейтийг устгах уу?`,
+    promptRequiredFailed: "Prompt илгээхэд алдаа гарлаа",
+    promptSent: "Prompt Hermes рүү илгээгдлээ",
+    promptQueued: "Prompt Hermes cron queue-д орлоо",
+    preview: "Preview",
+    edit: "Темплейт засах",
+    delete: "Темплейт устгах",
+    unavailable: "боломжгүй",
+  },
+};
+
 export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; lang?: "en" | "mn" }) {
   const [templates, setTemplates] = useState<Template[]>(brand.brandTemplates);
   const [items, setItems] = useState<Item[]>(brand.contentItems);
@@ -77,6 +186,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
   const [submittingTemplate, setSubmittingTemplate] = useState(false);
   const [sendingPrompt, setSendingPrompt] = useState(false);
   const [message, setMessage] = useState("");
+  const c = copy[lang];
 
   const plannedCount = useMemo(() => items.filter((item) => item.status === "PLANNED").length, [items]);
   const draftCount = useMemo(() => items.filter((item) => item.status === "DRAFT_GENERATED" || item.status === "WAITING_APPROVAL").length, [items]);
@@ -103,14 +213,14 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
         body,
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Template save failed");
+      if (!response.ok) throw new Error(data.error || c.templateSaveFailed);
       setTemplates((current) => [data.template, ...current]);
       setTemplateForm(emptyTemplate);
       setTemplateFile(null);
       setEditingTemplateId("");
-      setMessage("Template added");
+      setMessage(c.templateAdded);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Template save failed");
+      setMessage(error instanceof Error ? error.message : c.templateSaveFailed);
     } finally {
       setSubmittingTemplate(false);
     }
@@ -156,34 +266,34 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
         body,
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Template update failed");
+      if (!response.ok) throw new Error(data.error || c.templateUpdateFailed);
       setTemplates((current) => current.map((template) => (template.id === data.template.id ? data.template : template)));
       setTemplateForm(emptyTemplate);
       setTemplateFile(null);
       setEditingTemplateId("");
-      setMessage("Template updated");
+      setMessage(c.templateUpdated);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Template update failed");
+      setMessage(error instanceof Error ? error.message : c.templateUpdateFailed);
     } finally {
       setSubmittingTemplate(false);
     }
   }
 
   async function deleteTemplate(template: Template) {
-    if (!confirm(`Delete ${template.name}?`)) return;
+    if (!confirm(c.deleteTemplateConfirm(template.name))) return;
     setMessage("");
     try {
       const response = await fetch(`/api/admin/postly/brands/${brand.id}/templates/${template.id}`, {
         method: "DELETE",
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Template delete failed");
+      if (!response.ok) throw new Error(data.error || c.templateDeleteFailed);
       setTemplates((current) => current.filter((item) => item.id !== template.id));
       if (selectedTemplateId === template.id) setSelectedTemplateId("");
       if (editingTemplateId === template.id) cancelEditTemplate();
-      setMessage("Template deleted");
+      setMessage(c.templateDeleted);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Template delete failed");
+      setMessage(error instanceof Error ? error.message : c.templateDeleteFailed);
     }
   }
 
@@ -201,13 +311,13 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
         }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Prompt send failed");
+      if (!response.ok) throw new Error(data.error || c.promptRequiredFailed);
       setItems((current) => [data.item, ...current]);
       if (data.log) setLogs((current) => [data.log, ...current].slice(0, 10));
       setPrompt("");
-      setMessage(data.hermesTriggered ? "Prompt sent to Hermes" : "Prompt queued for Hermes cron");
+      setMessage(data.hermesTriggered ? c.promptSent : c.promptQueued);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Prompt send failed");
+      setMessage(error instanceof Error ? error.message : c.promptRequiredFailed);
     } finally {
       setSendingPrompt(false);
     }
@@ -219,18 +329,18 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <Link href="/admin/postly/brands" className="text-sm text-amber-300 hover:text-amber-200">
-              Back to brands
+              {c.back}
             </Link>
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-black sm:text-4xl">{brand.companyName || "Unnamed brand"}</h1>
-              <span className="rounded-full bg-emerald-400/15 px-2 py-1 text-xs font-semibold text-emerald-300">Active</span>
+              <h1 className="text-3xl font-black sm:text-4xl">{brand.companyName || c.unnamed}</h1>
+              <span className="rounded-full bg-emerald-400/15 px-2 py-1 text-xs font-semibold text-emerald-300">{c.active}</span>
             </div>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-white/55">{brand.businessType || brand.description || "Manage profile, templates, content, and Hermes chat for this brand."}</p>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-white/55">{brand.businessType || brand.description || c.fallbackDescription}</p>
           </div>
           <div className="grid grid-cols-3 gap-3 text-center md:min-w-[330px]">
-            <Stat label="Templates" value={templates.length} />
-            <Stat label="Queued" value={plannedCount} />
-            <Stat label="Drafts" value={draftCount} />
+            <Stat label={c.stats.templates} value={templates.length} />
+            <Stat label={c.stats.queued} value={plannedCount} />
+            <Stat label={c.stats.drafts} value={draftCount} />
           </div>
         </div>
 
@@ -243,7 +353,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
 
         <div className="mt-6 overflow-x-auto border-b border-white/10">
           <div className="flex min-w-max gap-6 text-sm">
-            {["Brand Profile", "Brand Voice", "Products / Services", "Templates", "Hermes Knowledge", "Content Plan"].map((tab, index) => (
+            {c.tabs.map((tab, index) => (
               <button
                 key={tab}
                 className={`border-b-2 px-1 pb-3 font-medium transition ${
@@ -258,38 +368,38 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)_430px]">
           <aside className="grid content-start gap-6">
-            <Panel title="Brand information" icon={<Sparkles className="h-5 w-5" />}>
+            <Panel title={c.brandInformation} icon={<Sparkles className="h-5 w-5" />}>
               <div className="flex items-center gap-4">
                 <div className="grid h-20 w-20 place-items-center rounded-full border border-white/10 bg-black text-2xl font-black text-amber-200">
                   {(brand.companyName || "P").slice(0, 1)}
                 </div>
                 <div>
-                  <p className="font-semibold">{brand.companyName || "Unnamed brand"}</p>
+                  <p className="font-semibold">{brand.companyName || c.unnamed}</p>
                   <p className="mt-1 text-sm text-white/45">{brand.email || brand.id}</p>
                 </div>
               </div>
               <div className="mt-5 grid gap-4 text-sm">
-                <InfoRow label="Phone" value={brand.phone || "-"} />
-                <InfoRow label="Website" value={brand.website || "-"} />
-                <InfoRow label="Address" value={brand.address || "-"} />
-                <InfoRow label="Tone" value={brand.brandGuideline?.toneOfVoice || "-"} />
+                <InfoRow label={c.phone} value={brand.phone || "-"} />
+                <InfoRow label={c.website} value={brand.website || "-"} />
+                <InfoRow label={c.address} value={brand.address || "-"} />
+                <InfoRow label={c.tone} value={brand.brandGuideline?.toneOfVoice || "-"} />
                 <div>
-                  <p className="text-xs uppercase tracking-[0.12em] text-white/35">Brand colors</p>
+                  <p className="text-xs uppercase tracking-[0.12em] text-white/35">{c.brandColors}</p>
                   <ColorRow colors={brand.brandGuideline?.brandColors || []} />
                 </div>
               </div>
             </Panel>
 
-            <Panel title={editingTemplateId ? "Edit template" : "Add template"} icon={editingTemplateId ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}>
+            <Panel title={editingTemplateId ? c.editTemplate : c.addTemplate} icon={editingTemplateId ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}>
               <div className="grid gap-3">
-                <Field label="Name" value={templateForm.name} onChange={(value) => updateTemplate("name", value)} placeholder="June promo poster" />
+                <Field label={c.name} value={templateForm.name} onChange={(value) => updateTemplate("name", value)} placeholder="June promo poster" />
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <LabeledSelect label="Type" value={templateForm.type} onChange={(value) => updateTemplate("type", value)} options={["POSTER", "CAROUSEL", "REEL", "STORY"]} />
-                  <Field label="Size" value={templateForm.size} onChange={(value) => updateTemplate("size", value)} placeholder="1080x1080" />
+                  <LabeledSelect label={c.type} value={templateForm.type} onChange={(value) => updateTemplate("type", value)} options={["POSTER", "CAROUSEL", "REEL", "STORY"]} />
+                  <Field label={c.size} value={templateForm.size} onChange={(value) => updateTemplate("size", value)} placeholder="1080x1080" />
                 </div>
-                <Field label="Category" value={templateForm.category} onChange={(value) => updateTemplate("category", value)} placeholder="promo, education" />
+                <Field label={c.category} value={templateForm.category} onChange={(value) => updateTemplate("category", value)} placeholder="promo, education" />
                 <label className="block">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/45">Upload file</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/45">{c.uploadFile}</span>
                   <input
                     type="file"
                     accept=".png,.jpg,.jpeg,.svg,.pdf,.pptx,image/png,image/jpeg,image/svg+xml,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
@@ -298,8 +408,8 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                   />
                   <span className="mt-2 block text-xs text-white/35">{templateFile ? templateFile.name : "PNG, JPG, SVG, PDF, PPTX"}</span>
                 </label>
-                <Field label="Preview image URL" value={templateForm.previewImageUrl} onChange={(value) => updateTemplate("previewImageUrl", value)} placeholder="https://..." />
-                <Field label="Template file URL" value={templateForm.templateFileUrl} onChange={(value) => updateTemplate("templateFileUrl", value)} placeholder="Canva/Figma/file URL" />
+                <Field label={c.previewUrl} value={templateForm.previewImageUrl} onChange={(value) => updateTemplate("previewImageUrl", value)} placeholder="https://..." />
+                <Field label={c.fileUrl} value={templateForm.templateFileUrl} onChange={(value) => updateTemplate("templateFileUrl", value)} placeholder="Canva/Figma/file URL" />
                 <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
                   <button
                     onClick={editingTemplateId ? updateCurrentTemplate : addTemplate}
@@ -307,7 +417,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-bold text-black transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {submittingTemplate ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Layers3 className="h-4 w-4" />}
-                    {editingTemplateId ? "Save changes" : "Add template"}
+                    {editingTemplateId ? c.saveChanges : c.addTemplate}
                   </button>
                   {editingTemplateId ? (
                     <button
@@ -315,7 +425,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/10 px-4 text-sm font-bold text-white/70 transition hover:bg-white/10"
                     >
                       <X className="h-4 w-4" />
-                      Cancel
+                      {c.cancel}
                     </button>
                   ) : null}
                 </div>
@@ -324,10 +434,10 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
           </aside>
 
           <section className="grid content-start gap-6">
-            <Panel title="Templates" icon={<Image className="h-5 w-5" />}>
+            <Panel title={c.stats.templates} icon={<Image className="h-5 w-5" />}>
               <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                 {templates.length === 0 ? (
-                  <p className="text-sm text-white/50">No templates added.</p>
+                  <p className="text-sm text-white/50">{c.noTemplates}</p>
                 ) : (
                   templates.map((template) => (
                     <article key={template.id} className="overflow-hidden rounded-lg border border-white/10 bg-black/25">
@@ -343,18 +453,18 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                         <p className="font-semibold">{template.name}</p>
                         <p className="mt-1 text-xs text-white/45">{template.type} · {template.size || "size not set"}</p>
                         <div className="mt-4 grid grid-cols-3 gap-2">
-                          <TemplateActionLink href={template.previewImageUrl || template.templateFileUrl} label="Preview" icon={<ExternalLink className="h-4 w-4" />} />
+                          <TemplateActionLink href={template.previewImageUrl || template.templateFileUrl} label={c.preview} unavailable={c.unavailable} icon={<ExternalLink className="h-4 w-4" />} />
                           <button
                             onClick={() => startEditTemplate(template)}
                             className="inline-flex h-9 items-center justify-center rounded-md border border-white/10 text-white/65 transition hover:bg-white/10 hover:text-white"
-                            title="Edit template"
+                            title={c.edit}
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => deleteTemplate(template)}
                             className="inline-flex h-9 items-center justify-center rounded-md border border-red-400/20 text-red-200 transition hover:bg-red-400/10"
-                            title="Delete template"
+                            title={c.delete}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -366,21 +476,21 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
               </div>
             </Panel>
 
-            <Panel title="Content queue" icon={<FileText className="h-5 w-5" />}>
+            <Panel title={c.contentQueue} icon={<FileText className="h-5 w-5" />}>
               <div className="grid gap-3">
                 {items.length === 0 ? (
-                  <p className="text-sm text-white/50">No content items yet.</p>
+                  <p className="text-sm text-white/50">{c.noContent}</p>
                 ) : (
                   items.map((item) => (
                     <div key={item.id} className="rounded-md border border-white/10 bg-black/25 p-4">
                       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                         <div>
-                          <p className="font-semibold">{item.title || item.headline || "Untitled content"}</p>
+                          <p className="font-semibold">{item.title || item.headline || c.untitled}</p>
                           <p className="mt-1 text-xs text-white/45">
                             {item.contentType} · {item.status} {item.template?.name ? `· ${item.template.name}` : ""}
                           </p>
                         </div>
-                        <span className="w-fit rounded-full bg-white/10 px-2 py-1 text-xs text-white/65">{item.category || "content"}</span>
+                        <span className="w-fit rounded-full bg-white/10 px-2 py-1 text-xs text-white/65">{item.category || c.content}</span>
                       </div>
                       {item.creativeDirection ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/55">{item.creativeDirection}</p> : null}
                     </div>
@@ -391,15 +501,15 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
           </section>
 
           <aside className="grid content-start gap-6">
-            <Panel title="Hermes chat" icon={<MessageSquareText className="h-5 w-5" />}>
+            <Panel title={c.hermesChat} icon={<MessageSquareText className="h-5 w-5" />}>
               <div className="grid gap-4">
                 <div className="rounded-md border border-amber-300/20 bg-amber-300/10 p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-amber-100">
                     <Sparkles className="h-4 w-4" />
-                    Hermes will use this brand context
+                    {c.hermesContext}
                   </div>
                   <p className="mt-2 text-sm leading-6 text-white/65">
-                    {brand.companyName || "This brand"} · {brand.businessType || "business"} · {brand.brandGuideline?.toneOfVoice || "brand tone not set"}
+                    {brand.companyName || c.unnamed} · {brand.businessType || c.business} · {brand.brandGuideline?.toneOfVoice || c.toneMissing}
                   </p>
                   <ColorRow colors={brand.brandGuideline?.brandColors || []} />
                 </div>
@@ -408,7 +518,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
                   rows={7}
-                  placeholder="Жишээ: Luna Brew-д зориулж 5 Facebook постын санаа, caption, image prompt-уудыг Монгол хэлээр гарга. Premium coffee subscription-ийн CTA оруул."
+                  placeholder={c.promptPlaceholder}
                   className="w-full rounded-md border border-white/10 bg-black/45 p-4 text-sm leading-6 text-white outline-none transition placeholder:text-white/25 focus:border-amber-300/70"
                 />
 
@@ -419,7 +529,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                     onChange={(event) => setSelectedTemplateId(event.target.value)}
                     className="h-11 rounded-md border border-white/10 bg-black/45 px-3 text-sm text-white outline-none transition focus:border-amber-300/70"
                   >
-                    <option value="">No specific template</option>
+                    <option value="">{c.noSpecificTemplate}</option>
                     {templates.map((template) => (
                       <option key={template.id} value={template.id}>
                         {template.name}
@@ -432,16 +542,16 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-amber-300 px-4 text-sm font-bold text-black transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {sendingPrompt ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    Send
+                    {c.send}
                   </button>
                 </div>
               </div>
             </Panel>
 
-            <Panel title="Recent activity" icon={<Clock3 className="h-5 w-5" />}>
+            <Panel title={c.recentActivity} icon={<Clock3 className="h-5 w-5" />}>
               <div className="grid gap-3">
                 {logs.length === 0 ? (
-                  <p className="text-sm text-white/50">No agent logs yet.</p>
+                  <p className="text-sm text-white/50">{c.noLogs}</p>
                 ) : (
                   logs.map((log) => (
                     <div key={log.id} className="rounded-md border border-white/10 bg-black/25 p-3">
@@ -530,10 +640,10 @@ function LabeledSelect({ label, value, onChange, options }: { label: string; val
   );
 }
 
-function TemplateActionLink({ href, label, icon }: { href?: string | null; label: string; icon: ReactNode }) {
+function TemplateActionLink({ href, label, unavailable, icon }: { href?: string | null; label: string; unavailable: string; icon: ReactNode }) {
   if (!href) {
     return (
-      <span className="inline-flex h-9 items-center justify-center rounded-md border border-white/10 text-white/25" title={`${label} unavailable`}>
+      <span className="inline-flex h-9 items-center justify-center rounded-md border border-white/10 text-white/25" title={`${label} ${unavailable}`}>
         {icon}
       </span>
     );

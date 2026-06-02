@@ -49,6 +49,101 @@ type FormState = {
   logoUrl: string;
 };
 
+const copy = {
+  en: {
+    title: "Brands",
+    subtitle: "Manage every brand, attach templates, and connect Hermes to brand-specific content work.",
+    addBrand: "Add Brand",
+    addNewBrand: "Add New Brand",
+    addNewBrandText: "Create a real Supabase-backed brand.",
+    search: "Search brand...",
+    empty: "No matching Postly brands found.",
+    unnamed: "Unnamed brand",
+    brandFallback: "Brand",
+    hermesReady: "Hermes-ready Postly brand.",
+    target: "Target",
+    targetMissing: "brand audience not set",
+    hermes: "Hermes",
+    active: "Active",
+    templates: "Templates",
+    deleteConfirm: (name: string) => `Delete ${name}? This also removes its templates, content, logs, and integrations.`,
+    savedCreate: "Brand created",
+    savedUpdate: "Brand updated",
+    deleted: "Brand deleted",
+    saveFailed: "Brand save failed",
+    deleteFailed: "Brand delete failed",
+    modalCreate: "Add brand",
+    modalEdit: "Edit brand",
+    modalText: "Brand data is saved to Supabase.",
+    cancel: "Cancel",
+    saving: "Saving...",
+    saveChanges: "Save changes",
+    createBrand: "Create brand",
+    fields: {
+      companyName: "Brand name",
+      businessType: "Industry",
+      activityDirection: "Audience",
+      toneOfVoice: "Tone",
+      phone: "Phone",
+      email: "Email",
+      website: "Website",
+      logoUrl: "Logo URL",
+      facebookUrl: "Facebook",
+      instagramUrl: "Instagram",
+      tiktokUrl: "TikTok",
+      brandColors: "Brand colors",
+      address: "Address",
+      description: "Description",
+    },
+  },
+  mn: {
+    title: "Брэндүүд",
+    subtitle: "Брэнд бүрийг удирдаж, template холбож, Hermes-ийг тухайн брэндийн контент ажилд холбоно.",
+    addBrand: "Брэнд нэмэх",
+    addNewBrand: "Шинэ брэнд нэмэх",
+    addNewBrandText: "Supabase-д хадгалагдах бодит брэнд үүсгэнэ.",
+    search: "Брэнд хайх...",
+    empty: "Тохирох Postly брэнд олдсонгүй.",
+    unnamed: "Нэргүй брэнд",
+    brandFallback: "Брэнд",
+    hermesReady: "Hermes-д бэлэн Postly брэнд.",
+    target: "Зорилтот",
+    targetMissing: "брэндийн audience тохируулаагүй",
+    hermes: "Hermes",
+    active: "Идэвхтэй",
+    templates: "Темплейт",
+    deleteConfirm: (name: string) => `${name}-г устгах уу? Template, content, logs, integration бүгд хамт устна.`,
+    savedCreate: "Брэнд үүслээ",
+    savedUpdate: "Брэнд шинэчлэгдлээ",
+    deleted: "Брэнд устлаа",
+    saveFailed: "Брэнд хадгалахад алдаа гарлаа",
+    deleteFailed: "Брэнд устгахад алдаа гарлаа",
+    modalCreate: "Брэнд нэмэх",
+    modalEdit: "Брэнд засах",
+    modalText: "Брэндийн мэдээлэл Supabase-д хадгалагдана.",
+    cancel: "Болих",
+    saving: "Хадгалж байна...",
+    saveChanges: "Өөрчлөлт хадгалах",
+    createBrand: "Брэнд үүсгэх",
+    fields: {
+      companyName: "Брэндийн нэр",
+      businessType: "Салбар",
+      activityDirection: "Audience",
+      toneOfVoice: "Tone",
+      phone: "Утас",
+      email: "Имэйл",
+      website: "Website",
+      logoUrl: "Logo URL",
+      facebookUrl: "Facebook",
+      instagramUrl: "Instagram",
+      tiktokUrl: "TikTok",
+      brandColors: "Брэнд өнгө",
+      address: "Хаяг",
+      description: "Тайлбар",
+    },
+  },
+};
+
 const emptyForm: FormState = {
   companyName: "",
   businessType: "",
@@ -85,7 +180,7 @@ function formFromBrand(brand: Brand): FormState {
   };
 }
 
-export default function BrandsManager({ initialBrands }: { initialBrands: Brand[] }) {
+export default function BrandsManager({ initialBrands, lang = "en" }: { initialBrands: Brand[]; lang?: "en" | "mn" }) {
   const [brands, setBrands] = useState(initialBrands);
   const [query, setQuery] = useState("");
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -93,6 +188,7 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
   const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const c = copy[lang];
 
   const filteredBrands = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -134,7 +230,7 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
         body: JSON.stringify(form),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Brand save failed");
+      if (!response.ok) throw new Error(data.error || c.saveFailed);
 
       setBrands((current) =>
         editingBrand ? current.map((brand) => (brand.id === data.brand.id ? data.brand : brand)) : [data.brand, ...current]
@@ -142,27 +238,27 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
       setFormOpen(false);
       setForm(emptyForm);
       setEditingBrand(null);
-      setMessage(editingBrand ? "Brand updated" : "Brand created");
+      setMessage(editingBrand ? c.savedUpdate : c.savedCreate);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Brand save failed");
+      setMessage(error instanceof Error ? error.message : c.saveFailed);
     } finally {
       setSaving(false);
     }
   }
 
   async function deleteBrand(brand: Brand) {
-    const name = brand.companyName || "this brand";
-    if (!window.confirm(`Delete ${name}? This also removes its templates, content, logs, and integrations.`)) return;
+    const name = brand.companyName || c.unnamed;
+    if (!window.confirm(c.deleteConfirm(name))) return;
 
     setMessage("");
     try {
       const response = await fetch(`/api/admin/postly/brands/${brand.id}`, { method: "DELETE" });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Brand delete failed");
+      if (!response.ok) throw new Error(data.error || c.deleteFailed);
       setBrands((current) => current.filter((item) => item.id !== brand.id));
-      setMessage("Brand deleted");
+      setMessage(c.deleted);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Brand delete failed");
+      setMessage(error instanceof Error ? error.message : c.deleteFailed);
     }
   }
 
@@ -170,9 +266,9 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
     <>
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="text-3xl font-black sm:text-4xl">Brands</h1>
+          <h1 className="text-3xl font-black sm:text-4xl">{c.title}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-            Manage every brand, attach templates, and connect Hermes to brand-specific content work.
+            {c.subtitle}
           </p>
         </div>
         <button
@@ -181,7 +277,7 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
           className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-amber-300 px-4 text-sm font-bold text-black transition hover:bg-amber-200"
         >
           <Plus className="h-4 w-4" />
-          Add Brand
+          {c.addBrand}
         </button>
       </div>
 
@@ -195,7 +291,7 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search brand..."
+            placeholder={c.search}
             className="h-11 w-full rounded-md border border-white/10 bg-white/[0.04] pl-10 pr-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-amber-300/60"
           />
         </label>
@@ -212,7 +308,7 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filteredBrands.length === 0 ? (
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5 text-sm text-white/55">
-            No matching Postly brands found.
+            {c.empty}
           </div>
         ) : (
           filteredBrands.map((brand) => (
@@ -225,18 +321,18 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
                   <div className="grid h-16 w-16 place-items-center rounded-full border border-white/10 bg-black text-xl font-black text-amber-200">
                     {(brand.companyName || "P").slice(0, 1)}
                   </div>
-                  <h2 className="mt-4 text-lg font-bold">{brand.companyName || "Unnamed brand"}</h2>
-                  <p className="mt-1 text-sm text-white/50">{brand.businessType || "Brand"}</p>
+                  <h2 className="mt-4 text-lg font-bold">{brand.companyName || c.unnamed}</h2>
+                  <p className="mt-1 text-sm text-white/50">{brand.businessType || c.brandFallback}</p>
                   <p className="mt-3 line-clamp-2 min-h-10 text-sm leading-5 text-white/45">
-                    {brand.activityDirection || brand.description || "Hermes-ready Postly brand."}
+                    {brand.activityDirection || brand.description || c.hermesReady}
                   </p>
                 </div>
                 <div className="mt-4 space-y-2 text-xs text-white/55">
-                  <p>Target: {brand.description?.slice(0, 58) || "brand audience not set"}</p>
+                  <p>{c.target}: {brand.description?.slice(0, 58) || c.targetMissing}</p>
                   <p>
-                    Hermes: <span className="font-semibold text-emerald-300">Active</span>
+                    {c.hermes}: <span className="font-semibold text-emerald-300">{c.active}</span>
                   </p>
-                  <p>Templates: {brand._count.brandTemplates}</p>
+                  <p>{c.templates}: {brand._count.brandTemplates}</p>
                 </div>
               </Link>
               <div className="grid grid-cols-5 border-t border-white/10">
@@ -262,8 +358,8 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
             <span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-amber-300 text-black">
               <Plus className="h-5 w-5" />
             </span>
-            <p className="mt-4 font-semibold">Add New Brand</p>
-            <p className="mt-2 text-sm text-white/45">Create a real Supabase-backed brand.</p>
+            <p className="mt-4 font-semibold">{c.addNewBrand}</p>
+            <p className="mt-2 text-sm text-white/45">{c.addNewBrandText}</p>
           </div>
         </button>
       </div>
@@ -273,8 +369,8 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
           <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-white/10 bg-zinc-950 p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-black">{editingBrand ? "Edit brand" : "Add brand"}</h2>
-                <p className="mt-1 text-sm text-white/50">Brand data is saved to Supabase.</p>
+                <h2 className="text-2xl font-black">{editingBrand ? c.modalEdit : c.modalCreate}</h2>
+                <p className="mt-1 text-sm text-white/50">{c.modalText}</p>
               </div>
               <button onClick={() => setFormOpen(false)} className="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-white/65 hover:bg-white/10">
                 <X className="h-4 w-4" />
@@ -282,32 +378,32 @@ export default function BrandsManager({ initialBrands }: { initialBrands: Brand[
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Brand name" value={form.companyName} onChange={(value) => update("companyName", value)} placeholder="Luna Brew" />
-              <Field label="Industry" value={form.businessType} onChange={(value) => update("businessType", value)} placeholder="Coffee shop" />
-              <Field label="Audience" value={form.activityDirection} onChange={(value) => update("activityDirection", value)} placeholder="20-35 specialty coffee fans" />
-              <Field label="Tone" value={form.toneOfVoice} onChange={(value) => update("toneOfVoice", value)} placeholder="Warm, premium, concise" />
-              <Field label="Phone" value={form.phone} onChange={(value) => update("phone", value)} placeholder="+976..." />
-              <Field label="Email" value={form.email} onChange={(value) => update("email", value)} placeholder="hello@brand.mn" />
-              <Field label="Website" value={form.website} onChange={(value) => update("website", value)} placeholder="https://..." />
-              <Field label="Logo URL" value={form.logoUrl} onChange={(value) => update("logoUrl", value)} placeholder="https://..." />
-              <Field label="Facebook" value={form.facebookUrl} onChange={(value) => update("facebookUrl", value)} placeholder="https://facebook.com/..." />
-              <Field label="Instagram" value={form.instagramUrl} onChange={(value) => update("instagramUrl", value)} placeholder="https://instagram.com/..." />
-              <Field label="TikTok" value={form.tiktokUrl} onChange={(value) => update("tiktokUrl", value)} placeholder="https://tiktok.com/..." />
-              <Field label="Brand colors" value={form.brandColors} onChange={(value) => update("brandColors", value)} placeholder="#101820&#10;#F2AA4C" multiline />
-              <Field label="Address" value={form.address} onChange={(value) => update("address", value)} placeholder="Ulaanbaatar..." multiline />
-              <Field label="Description" value={form.description} onChange={(value) => update("description", value)} placeholder="Short brand summary" multiline />
+              <Field label={c.fields.companyName} value={form.companyName} onChange={(value) => update("companyName", value)} placeholder="Luna Brew" />
+              <Field label={c.fields.businessType} value={form.businessType} onChange={(value) => update("businessType", value)} placeholder="Coffee shop" />
+              <Field label={c.fields.activityDirection} value={form.activityDirection} onChange={(value) => update("activityDirection", value)} placeholder="20-35 specialty coffee fans" />
+              <Field label={c.fields.toneOfVoice} value={form.toneOfVoice} onChange={(value) => update("toneOfVoice", value)} placeholder="Warm, premium, concise" />
+              <Field label={c.fields.phone} value={form.phone} onChange={(value) => update("phone", value)} placeholder="+976..." />
+              <Field label={c.fields.email} value={form.email} onChange={(value) => update("email", value)} placeholder="hello@brand.mn" />
+              <Field label={c.fields.website} value={form.website} onChange={(value) => update("website", value)} placeholder="https://..." />
+              <Field label={c.fields.logoUrl} value={form.logoUrl} onChange={(value) => update("logoUrl", value)} placeholder="https://..." />
+              <Field label={c.fields.facebookUrl} value={form.facebookUrl} onChange={(value) => update("facebookUrl", value)} placeholder="https://facebook.com/..." />
+              <Field label={c.fields.instagramUrl} value={form.instagramUrl} onChange={(value) => update("instagramUrl", value)} placeholder="https://instagram.com/..." />
+              <Field label={c.fields.tiktokUrl} value={form.tiktokUrl} onChange={(value) => update("tiktokUrl", value)} placeholder="https://tiktok.com/..." />
+              <Field label={c.fields.brandColors} value={form.brandColors} onChange={(value) => update("brandColors", value)} placeholder="#101820&#10;#F2AA4C" multiline />
+              <Field label={c.fields.address} value={form.address} onChange={(value) => update("address", value)} placeholder="Ulaanbaatar..." multiline />
+              <Field label={c.fields.description} value={form.description} onChange={(value) => update("description", value)} placeholder="Short brand summary" multiline />
             </div>
 
             <div className="mt-5 flex justify-end gap-3">
               <button onClick={() => setFormOpen(false)} className="h-10 rounded-md border border-white/10 px-4 text-sm text-white/70 hover:bg-white/10">
-                Cancel
+                {c.cancel}
               </button>
               <button
                 onClick={saveBrand}
                 disabled={saving || !form.companyName.trim()}
                 className="h-10 rounded-md bg-amber-300 px-4 text-sm font-bold text-black hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {saving ? "Saving..." : editingBrand ? "Save changes" : "Create brand"}
+                {saving ? c.saving : editingBrand ? c.saveChanges : c.createBrand}
               </button>
             </div>
           </div>
