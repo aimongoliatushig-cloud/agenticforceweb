@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
-import { UserRole } from "@prisma/client";
-import { isAdminEmail } from "@/lib/auth";
-import { hasDatabaseUrl, prisma } from "@/lib/db";
+import { hasDatabaseUrl } from "@/lib/db";
 import {
   getPrimaryEmail,
   getRequestMetadata,
@@ -10,6 +8,7 @@ import {
   sendSignupToHermes,
   type ClerkUserCreatedData,
 } from "@/lib/hermes-signup";
+import { syncUserRecord } from "@/lib/user-sync";
 
 type ClerkWebhookEvent = {
   type: string;
@@ -53,25 +52,12 @@ export async function POST(request: Request) {
 
   if (hasDatabaseUrl() && email) {
     try {
-      await prisma.user.upsert({
-        where: { clerkUserId: event.data.id },
-        update: {
-          email: email.toLowerCase(),
-          name: [event.data.first_name, event.data.last_name].filter(Boolean).join(" ") || null,
-          avatarUrl: event.data.image_url ?? null,
-          phone: event.data.phone_numbers?.[0]?.phone_number ?? null,
-          role: isAdminEmail(email) ? UserRole.admin : undefined,
-          lastSeenAt: new Date(),
-        },
-        create: {
-          clerkUserId: event.data.id,
-          email: email.toLowerCase(),
-          name: [event.data.first_name, event.data.last_name].filter(Boolean).join(" ") || null,
-          avatarUrl: event.data.image_url ?? null,
-          phone: event.data.phone_numbers?.[0]?.phone_number ?? null,
-          role: isAdminEmail(email) ? UserRole.admin : UserRole.user,
-          lastSeenAt: new Date(),
-        },
+      await syncUserRecord({
+        clerkUserId: event.data.id,
+        email,
+        name: [event.data.first_name, event.data.last_name].filter(Boolean).join(" ") || email,
+        avatarUrl: event.data.image_url ?? null,
+        phone: event.data.phone_numbers?.[0]?.phone_number ?? null,
       });
     } catch (error) {
       console.error("Failed to sync Clerk user before Hermes delivery", error);
