@@ -5,14 +5,18 @@ import Link from "next/link";
 import {
   CheckCircle2,
   Clock3,
+  ExternalLink,
   FileText,
   Image,
   Layers3,
   LoaderCircle,
   MessageSquareText,
+  Pencil,
   Plus,
   Send,
   Sparkles,
+  Trash2,
+  X,
 } from "lucide-react";
 import type { BrandTemplate, CompanyProfile, ContentItem, ContentPlan, ProductService, AgentLog, SocialAccount, MakeIntegration } from "@prisma/client";
 import type { ReactNode } from "react";
@@ -66,6 +70,7 @@ export default function BrandWorkspace({ brand }: { brand: Brand }) {
   const [logs, setLogs] = useState<AgentLog[]>(brand.agentLogs);
   const [templateForm, setTemplateForm] = useState<TemplateForm>(emptyTemplate);
   const [templateFile, setTemplateFile] = useState<File | null>(null);
+  const [editingTemplateId, setEditingTemplateId] = useState("");
   const [prompt, setPrompt] = useState("");
   const [contentType, setContentType] = useState("POSTER");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -102,11 +107,83 @@ export default function BrandWorkspace({ brand }: { brand: Brand }) {
       setTemplates((current) => [data.template, ...current]);
       setTemplateForm(emptyTemplate);
       setTemplateFile(null);
+      setEditingTemplateId("");
       setMessage("Template added");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Template save failed");
     } finally {
       setSubmittingTemplate(false);
+    }
+  }
+
+  function startEditTemplate(template: Template) {
+    setEditingTemplateId(template.id);
+    setTemplateFile(null);
+    setTemplateForm({
+      name: template.name,
+      type: template.type,
+      category: template.category || "",
+      size: template.size || "1080x1080",
+      previewImageUrl: template.previewImageUrl || "",
+      templateFileUrl: template.templateFileUrl || "",
+    });
+    setMessage("");
+  }
+
+  function cancelEditTemplate() {
+    setEditingTemplateId("");
+    setTemplateForm(emptyTemplate);
+    setTemplateFile(null);
+    setMessage("");
+  }
+
+  async function updateCurrentTemplate() {
+    if (!editingTemplateId) return;
+    setSubmittingTemplate(true);
+    setMessage("");
+    try {
+      const body = new FormData();
+      body.append("name", templateForm.name);
+      body.append("type", templateForm.type);
+      body.append("category", templateForm.category);
+      body.append("size", templateForm.size);
+      body.append("previewImageUrl", templateForm.previewImageUrl);
+      body.append("templateFileUrl", templateForm.templateFileUrl);
+      if (templateFile) body.append("file", templateFile);
+
+      const response = await fetch(`/api/admin/postly/brands/${brand.id}/templates/${editingTemplateId}`, {
+        method: "PATCH",
+        body,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Template update failed");
+      setTemplates((current) => current.map((template) => (template.id === data.template.id ? data.template : template)));
+      setTemplateForm(emptyTemplate);
+      setTemplateFile(null);
+      setEditingTemplateId("");
+      setMessage("Template updated");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Template update failed");
+    } finally {
+      setSubmittingTemplate(false);
+    }
+  }
+
+  async function deleteTemplate(template: Template) {
+    if (!confirm(`Delete ${template.name}?`)) return;
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/postly/brands/${brand.id}/templates/${template.id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Template delete failed");
+      setTemplates((current) => current.filter((item) => item.id !== template.id));
+      if (selectedTemplateId === template.id) setSelectedTemplateId("");
+      if (editingTemplateId === template.id) cancelEditTemplate();
+      setMessage("Template deleted");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Template delete failed");
     }
   }
 
@@ -203,7 +280,7 @@ export default function BrandWorkspace({ brand }: { brand: Brand }) {
               </div>
             </Panel>
 
-            <Panel title="Add template" icon={<Plus className="h-5 w-5" />}>
+            <Panel title={editingTemplateId ? "Edit template" : "Add template"} icon={editingTemplateId ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}>
               <div className="grid gap-3">
                 <Field label="Name" value={templateForm.name} onChange={(value) => updateTemplate("name", value)} placeholder="June promo poster" />
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -223,14 +300,25 @@ export default function BrandWorkspace({ brand }: { brand: Brand }) {
                 </label>
                 <Field label="Preview image URL" value={templateForm.previewImageUrl} onChange={(value) => updateTemplate("previewImageUrl", value)} placeholder="https://..." />
                 <Field label="Template file URL" value={templateForm.templateFileUrl} onChange={(value) => updateTemplate("templateFileUrl", value)} placeholder="Canva/Figma/file URL" />
-                <button
-                  onClick={addTemplate}
-                  disabled={submittingTemplate || !templateForm.name.trim()}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-bold text-black transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {submittingTemplate ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Layers3 className="h-4 w-4" />}
-                  Add template
-                </button>
+                <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                  <button
+                    onClick={editingTemplateId ? updateCurrentTemplate : addTemplate}
+                    disabled={submittingTemplate || !templateForm.name.trim()}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-bold text-black transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {submittingTemplate ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Layers3 className="h-4 w-4" />}
+                    {editingTemplateId ? "Save changes" : "Add template"}
+                  </button>
+                  {editingTemplateId ? (
+                    <button
+                      onClick={cancelEditTemplate}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/10 px-4 text-sm font-bold text-white/70 transition hover:bg-white/10"
+                    >
+                      <X className="h-4 w-4" />
+                      Cancel
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </Panel>
           </aside>
@@ -254,6 +342,23 @@ export default function BrandWorkspace({ brand }: { brand: Brand }) {
                       <div className="p-4">
                         <p className="font-semibold">{template.name}</p>
                         <p className="mt-1 text-xs text-white/45">{template.type} · {template.size || "size not set"}</p>
+                        <div className="mt-4 grid grid-cols-3 gap-2">
+                          <TemplateActionLink href={template.previewImageUrl || template.templateFileUrl} label="Preview" icon={<ExternalLink className="h-4 w-4" />} />
+                          <button
+                            onClick={() => startEditTemplate(template)}
+                            className="inline-flex h-9 items-center justify-center rounded-md border border-white/10 text-white/65 transition hover:bg-white/10 hover:text-white"
+                            title="Edit template"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteTemplate(template)}
+                            className="inline-flex h-9 items-center justify-center rounded-md border border-red-400/20 text-red-200 transition hover:bg-red-400/10"
+                            title="Delete template"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </article>
                   ))
@@ -422,6 +527,28 @@ function LabeledSelect({ label, value, onChange, options }: { label: string; val
         <Select value={value} onChange={onChange} options={options} />
       </div>
     </label>
+  );
+}
+
+function TemplateActionLink({ href, label, icon }: { href?: string | null; label: string; icon: ReactNode }) {
+  if (!href) {
+    return (
+      <span className="inline-flex h-9 items-center justify-center rounded-md border border-white/10 text-white/25" title={`${label} unavailable`}>
+        {icon}
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex h-9 items-center justify-center rounded-md border border-white/10 text-white/65 transition hover:bg-white/10 hover:text-white"
+      title={label}
+    >
+      {icon}
+    </a>
   );
 }
 

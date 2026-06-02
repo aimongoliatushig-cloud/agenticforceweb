@@ -87,6 +87,7 @@ export async function requirePostlyCompany(locale?: string) {
     update: {
       email,
       name: clerkUser.fullName || clerkUser.firstName || email,
+      avatarUrl: clerkUser.imageUrl || null,
       locale: normalizeLocale(locale),
       lastSeenAt: new Date(),
     },
@@ -94,6 +95,7 @@ export async function requirePostlyCompany(locale?: string) {
       clerkUserId: clerkUser.id,
       email,
       name: clerkUser.fullName || clerkUser.firstName || email,
+      avatarUrl: clerkUser.imageUrl || null,
       locale: normalizeLocale(locale),
       lastSeenAt: new Date(),
     },
