@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
+  CalendarDays,
   CheckCircle2,
   Clock3,
   ExternalLink,
@@ -69,6 +70,15 @@ type ProductForm = {
   painPoints: string;
 };
 
+type PlanForm = {
+  month: string;
+  totalPosts: string;
+  totalReels: string;
+  totalCarousels: string;
+  strategyNote: string;
+  status: string;
+};
+
 type StorageStatus = {
   bucket: string;
   ready: boolean;
@@ -95,7 +105,21 @@ const emptyProduct: ProductForm = {
   painPoints: "",
 };
 
-const tabTargets = ["brand-profile", "brand-profile", "products-services", "templates", "hermes-chat", "content-plan"];
+function currentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+const emptyPlan = (): PlanForm => ({
+  month: currentMonth(),
+  totalPosts: "",
+  totalReels: "",
+  totalCarousels: "",
+  strategyNote: "",
+  status: "ACTIVE",
+});
+
+const tabTargets = ["brand-profile", "brand-profile", "products-services", "templates", "hermes-chat", "plans", "content-plan"];
 
 const copy = {
   en: {
@@ -104,7 +128,7 @@ const copy = {
     active: "Active",
     fallbackDescription: "Manage profile, templates, content, and Hermes chat for this brand.",
     stats: { templates: "Templates", queued: "Queued", drafts: "Drafts" },
-    tabs: ["Brand Profile", "Brand Voice", "Products / Services", "Templates", "Hermes Knowledge", "Content Plan"],
+    tabs: ["Brand Profile", "Brand Voice", "Products / Services", "Templates", "Hermes Knowledge", "Plans", "Content Queue"],
     brandInformation: "Brand information",
     productsServices: "Products / Services",
     addProduct: "Add product/service",
@@ -145,6 +169,21 @@ const copy = {
     noTemplates: "No templates added.",
     contentQueue: "Content queue",
     noContent: "No content items yet.",
+    contentPlans: "Plans",
+    planMonth: "Month",
+    totalPosts: "Posts",
+    totalReels: "Reels",
+    totalCarousels: "Carousels",
+    strategyNote: "Plan",
+    status: "Status",
+    savePlan: "Save plan",
+    hermesPlan: "Hermes plan",
+    saveHermesPlan: "Save Hermes plan",
+    planPlaceholder: "Example: June plan: 8 posts, 2 reels, 1 carousel. Focus on launch announcement, education, proof, and CTA.",
+    manualPlanPlaceholder: "Write the monthly strategy, topics, cadence, and CTA notes.",
+    noPlans: "No plans yet.",
+    planSaved: "Plan saved",
+    planSaveFailed: "Plan save failed",
     untitled: "Untitled content",
     content: "content",
     hermesChat: "Hermes chat",
@@ -181,7 +220,7 @@ const copy = {
     active: "Идэвхтэй",
     fallbackDescription: "Энэ брэндийн profile, template, content, Hermes chat-ийг удирдана.",
     stats: { templates: "Темплейт", queued: "Queue", drafts: "Draft" },
-    tabs: ["Брэнд profile", "Брэнд voice", "Бүтээгдэхүүн / Үйлчилгээ", "Темплейт", "Hermes knowledge", "Контент plan"],
+    tabs: ["Брэнд profile", "Брэнд voice", "Бүтээгдэхүүн / Үйлчилгээ", "Темплейт", "Hermes knowledge", "Төлөвлөгөө", "Контент queue"],
     brandInformation: "Брэнд мэдээлэл",
     productsServices: "Бүтээгдэхүүн / Үйлчилгээ",
     addProduct: "Бүтээгдэхүүн нэмэх",
@@ -219,6 +258,21 @@ const copy = {
     noTemplates: "Темплейт одоогоор алга.",
     contentQueue: "Контент queue",
     noContent: "Контент item одоогоор алга.",
+    contentPlans: "Төлөвлөгөө",
+    planMonth: "Сар",
+    totalPosts: "Пост",
+    totalReels: "Reel",
+    totalCarousels: "Carousel",
+    strategyNote: "Төлөвлөгөө",
+    status: "Статус",
+    savePlan: "Төлөвлөгөө хадгалах",
+    hermesPlan: "Hermes төлөвлөгөө",
+    saveHermesPlan: "Hermes plan хадгалах",
+    planPlaceholder: "Жишээ: 6 сарын төлөвлөгөө: 8 пост, 2 reel, 1 carousel. Launch announcement, education, proof, CTA дээр төвлөр.",
+    manualPlanPlaceholder: "Сарын стратеги, сэдвүүд, давтамж, CTA тэмдэглэлээ бичнэ.",
+    noPlans: "Төлөвлөгөө одоогоор алга.",
+    planSaved: "Төлөвлөгөө хадгалагдлаа",
+    planSaveFailed: "Төлөвлөгөө хадгалахад алдаа гарлаа",
     untitled: "Гарчиггүй контент",
     content: "контент",
     hermesChat: "Hermes чат",
@@ -264,6 +318,7 @@ function metadataImageUrl(metadata: unknown) {
 export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; lang?: "en" | "mn" }) {
   const [templates, setTemplates] = useState<Template[]>(brand.brandTemplates);
   const [products, setProducts] = useState<ProductService[]>(brand.productsServicesPostly);
+  const [plans, setPlans] = useState<Plan[]>(brand.contentPlans);
   const [items, setItems] = useState<Item[]>(brand.contentItems);
   const [logs, setLogs] = useState<AgentLog[]>(brand.agentLogs);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(brand.hermesChatMessages);
@@ -274,6 +329,9 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
   const [productForm, setProductForm] = useState<ProductForm>(emptyProduct);
   const [editingProductId, setEditingProductId] = useState("");
   const [savingProduct, setSavingProduct] = useState(false);
+  const [planForm, setPlanForm] = useState<PlanForm>(emptyPlan);
+  const [hermesPlanPrompt, setHermesPlanPrompt] = useState("");
+  const [savingPlan, setSavingPlan] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [contentType, setContentType] = useState("POSTER");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -325,6 +383,10 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
     setProductForm((current) => ({ ...current, [key]: value }));
   }
 
+  function updatePlan<K extends keyof PlanForm>(key: K, value: PlanForm[K]) {
+    setPlanForm((current) => ({ ...current, [key]: value }));
+  }
+
   function activateTab(index: number) {
     setActiveTabIndex(index);
     document.getElementById(tabTargets[index])?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -339,6 +401,14 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
       benefits: productForm.benefits,
       painPoints: productForm.painPoints,
     };
+  }
+
+  function upsertPlanState(plan: Plan) {
+    setPlans((current) => {
+      const exists = current.some((item) => item.id === plan.id);
+      if (exists) return current.map((item) => (item.id === plan.id ? plan : item));
+      return [plan, ...current];
+    });
   }
 
   function startEditProduct(product: ProductService) {
@@ -399,6 +469,41 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
       setMessage(c.productDeleted);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : c.productDeleteFailed);
+    }
+  }
+
+  async function savePlan(source: "manual" | "hermes") {
+    const strategyNote = source === "hermes" ? hermesPlanPrompt : planForm.strategyNote;
+    if (!strategyNote.trim()) return;
+
+    setSavingPlan(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/postly/brands/${brand.id}/plans`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source,
+          month: planForm.month,
+          totalPosts: planForm.totalPosts,
+          totalReels: planForm.totalReels,
+          totalCarousels: planForm.totalCarousels,
+          strategyNote,
+          status: planForm.status,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || c.planSaveFailed);
+      upsertPlanState(data.plan);
+      if (data.log) setLogs((current) => [data.log, ...current].slice(0, 10));
+      if (Array.isArray(data.chatMessages)) setChatMessages(data.chatMessages);
+      if (source === "hermes") setHermesPlanPrompt("");
+      setPlanForm((current) => ({ ...current, strategyNote: "" }));
+      setMessage(c.planSaved);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : c.planSaveFailed);
+    } finally {
+      setSavingPlan(false);
     }
   }
 
@@ -758,6 +863,71 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                         </div>
                       </div>
                     </article>
+                  ))
+                )}
+              </div>
+            </Panel>
+
+            <Panel id="plans" title={c.contentPlans} icon={<CalendarDays className="h-5 w-5" />}>
+              <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
+                <div className="grid gap-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/45">{c.hermesPlan}</p>
+                  <textarea
+                    value={hermesPlanPrompt}
+                    onChange={(event) => setHermesPlanPrompt(event.target.value)}
+                    rows={8}
+                    placeholder={c.planPlaceholder}
+                    className="w-full rounded-md border border-white/10 bg-black/45 p-4 text-sm leading-6 text-white outline-none transition placeholder:text-white/25 focus:border-amber-300/70"
+                  />
+                  <button
+                    onClick={() => savePlan("hermes")}
+                    disabled={savingPlan || !hermesPlanPrompt.trim()}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-amber-300 px-4 text-sm font-bold text-black transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {savingPlan ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {c.saveHermesPlan}
+                  </button>
+                </div>
+
+                <div className="grid gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label={c.planMonth} value={planForm.month} onChange={(value) => updatePlan("month", value)} placeholder="2026-06" />
+                    <LabeledSelect label={c.status} value={planForm.status} onChange={(value) => updatePlan("status", value)} options={["ACTIVE", "DRAFT", "COMPLETED"]} />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Field label={c.totalPosts} value={planForm.totalPosts} onChange={(value) => updatePlan("totalPosts", value)} placeholder="8" />
+                    <Field label={c.totalReels} value={planForm.totalReels} onChange={(value) => updatePlan("totalReels", value)} placeholder="2" />
+                    <Field label={c.totalCarousels} value={planForm.totalCarousels} onChange={(value) => updatePlan("totalCarousels", value)} placeholder="1" />
+                  </div>
+                  <Field label={c.strategyNote} value={planForm.strategyNote} onChange={(value) => updatePlan("strategyNote", value)} placeholder={c.manualPlanPlaceholder} multiline />
+                  <button
+                    onClick={() => savePlan("manual")}
+                    disabled={savingPlan || !planForm.strategyNote.trim()}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-bold text-black transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {savingPlan ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    {c.savePlan}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-3">
+                {plans.length === 0 ? (
+                  <p className="text-sm text-white/50">{c.noPlans}</p>
+                ) : (
+                  plans.map((plan) => (
+                    <div key={plan.id} className="rounded-md border border-white/10 bg-black/25 p-4">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <p className="font-semibold">{plan.month}</p>
+                          <p className="mt-1 text-xs text-white/45">
+                            {plan.totalPosts} {c.totalPosts} · {plan.totalReels} {c.totalReels} · {plan.totalCarousels} {c.totalCarousels} · {plan._count.contentItems} {c.content}
+                          </p>
+                        </div>
+                        <span className="w-fit rounded-full bg-white/10 px-2 py-1 text-xs text-white/65">{plan.status}</span>
+                      </div>
+                      {plan.strategyNote ? <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-white/60">{plan.strategyNote}</p> : null}
+                    </div>
                   ))
                 )}
               </div>
