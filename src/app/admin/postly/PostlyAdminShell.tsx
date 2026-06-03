@@ -101,10 +101,38 @@ export default function PostlyAdminShell({
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-300 text-xs font-black text-black">P</span>
               <span className="font-black">Postly.mn</span>
             </Link>
-            <Link href={withLang("/admin/postly/brands")} className="rounded-md border border-white/10 px-3 py-2 text-xs text-white/70">
-              {lang === "mn" ? "Брэндүүд" : "Brands"}
-            </Link>
+            <div className="grid grid-cols-2 gap-1 rounded-md border border-white/10 bg-white/[0.04] p-1">
+              {(["mn", "en"] as const).map((item) => (
+                <Link
+                  key={item}
+                  href={withLang(switchPath, item)}
+                  className={`rounded px-2 py-1 text-center text-[11px] font-bold transition ${
+                    lang === item ? "bg-white text-black" : "text-white/55 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {item.toUpperCase()}
+                </Link>
+              ))}
+            </div>
           </div>
+          <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const selected = item.key === active;
+              return (
+                <Link
+                  key={item.key}
+                  href={withLang(item.href)}
+                  className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-md border px-3 text-xs font-semibold transition ${
+                    selected ? "border-amber-300/45 bg-amber-300 text-black" : "border-white/10 bg-white/[0.04] text-white/65 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {item[labelKey]}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
         {children}
       </div>
