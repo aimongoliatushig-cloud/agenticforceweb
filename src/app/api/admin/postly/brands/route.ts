@@ -51,7 +51,7 @@ export async function GET() {
   if (denied) return denied;
 
   const brands = await prisma.companyProfile.findMany({
-    orderBy: [{ companyName: "asc" }, { createdAt: "desc" }],
+    orderBy: [{ createdAt: "desc" }, { companyName: "asc" }],
     include: {
       brandGuideline: true,
       _count: {

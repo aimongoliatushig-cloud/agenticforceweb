@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Grid2X2, ListFilter, MessageCircle, MoreHorizontal, Pencil, Plus, Search, Store, Trash2, X } from "lucide-react";
 
@@ -194,6 +194,33 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
   const viewLabels = lang === "mn"
     ? { grid: "Grid харагдац", list: "List харагдац" }
     : { grid: "Grid view", list: "List view" };
+
+  async function refreshBrands() {
+    try {
+      const response = await fetch("/api/admin/postly/brands", { cache: "no-store" });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && Array.isArray(data.brands)) {
+        setBrands(data.brands);
+      }
+    } catch {
+      // Keep the server-rendered list if a background refresh fails.
+    }
+  }
+
+  useEffect(() => {
+    refreshBrands();
+
+    function handleFocus() {
+      refreshBrands();
+    }
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, []);
 
   const filteredBrands = useMemo(() => {
     const needle = query.trim().toLowerCase();

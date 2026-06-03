@@ -18,7 +18,7 @@ export default async function AdminPostlyBrandsPage({ searchParams }: { searchPa
   const currentLang = adminLang(lang);
   const brands = hasDatabaseUrl()
     ? (await prisma.companyProfile.findMany({
-        orderBy: [{ companyName: "asc" }, { createdAt: "desc" }],
+        orderBy: [{ createdAt: "desc" }, { companyName: "asc" }],
         include: {
           brandGuideline: true,
           _count: {
