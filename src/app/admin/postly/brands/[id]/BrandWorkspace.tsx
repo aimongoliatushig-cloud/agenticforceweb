@@ -20,12 +20,12 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import type { AgentLog, BrandTemplate, CompanyProfile, ContentItem, ContentPlan, HermesChatMessage, MakeIntegration, ProductService, SocialAccount } from "@prisma/client";
+import type { AgentLog, BrandTemplate, CompanyProfile, ContentAsset, ContentItem, ContentPlan, HermesChatMessage, MakeIntegration, ProductService, SocialAccount } from "@prisma/client";
 import type { ReactNode } from "react";
 import PostlyAdminShell from "../../PostlyAdminShell";
 
 type Template = BrandTemplate;
-type Item = ContentItem & { template?: BrandTemplate | null };
+type Item = ContentItem & { template?: BrandTemplate | null; assets?: ContentAsset[] };
 type Plan = ContentPlan & { _count: { contentItems: number } };
 type ChatMessage = HermesChatMessage;
 type Brand = CompanyProfile & {
@@ -250,6 +250,16 @@ const copy = {
     unavailable: "боломжгүй",
   },
 };
+
+function itemImageUrl(item: Item) {
+  return item.assets?.find((asset) => asset.assetType === "IMAGE")?.fileUrl;
+}
+
+function metadataImageUrl(metadata: unknown) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
+  const value = (metadata as Record<string, unknown>).posterAssetUrl;
+  return typeof value === "string" && value.trim() ? value : null;
+}
 
 export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; lang?: "en" | "mn" }) {
   const [templates, setTemplates] = useState<Template[]>(brand.brandTemplates);
@@ -758,20 +768,33 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                 {items.length === 0 ? (
                   <p className="text-sm text-white/50">{c.noContent}</p>
                 ) : (
-                  items.map((item) => (
-                    <div key={item.id} className="rounded-md border border-white/10 bg-black/25 p-4">
-                      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                        <div>
-                          <p className="font-semibold">{item.title || item.headline || c.untitled}</p>
-                          <p className="mt-1 text-xs text-white/45">
-                            {item.contentType} · {item.status} {item.template?.name ? `· ${item.template.name}` : ""}
-                          </p>
+                  items.map((item) => {
+                    const imageUrl = itemImageUrl(item);
+                    return (
+                      <div key={item.id} className="rounded-md border border-white/10 bg-black/25 p-4">
+                        <div className={imageUrl ? "grid gap-4 md:grid-cols-[116px_1fr]" : "grid gap-4"}>
+                          {imageUrl ? (
+                            <div className="overflow-hidden rounded-md border border-white/10 bg-black/40">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={imageUrl} alt={item.title || item.headline || c.untitled} className="aspect-square h-full w-full object-cover" />
+                            </div>
+                          ) : null}
+                          <div>
+                            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                              <div>
+                                <p className="font-semibold">{item.title || item.headline || c.untitled}</p>
+                                <p className="mt-1 text-xs text-white/45">
+                                  {item.contentType} · {item.status} {item.template?.name ? `· ${item.template.name}` : ""}
+                                </p>
+                              </div>
+                              <span className="w-fit rounded-full bg-white/10 px-2 py-1 text-xs text-white/65">{item.category || c.content}</span>
+                            </div>
+                            {item.creativeDirection ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/55">{item.creativeDirection}</p> : null}
+                          </div>
                         </div>
-                        <span className="w-fit rounded-full bg-white/10 px-2 py-1 text-xs text-white/65">{item.category || c.content}</span>
                       </div>
-                      {item.creativeDirection ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/55">{item.creativeDirection}</p> : null}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </Panel>
@@ -831,6 +854,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                     ) : (
                       [...chatMessages].reverse().map((chat) => {
                         const isAdmin = chat.sender === "admin";
+                        const imageUrl = metadataImageUrl(chat.metadata);
                         return (
                           <div key={chat.id} className={`rounded-md border p-3 ${isAdmin ? "border-amber-300/20 bg-amber-300/10" : "border-white/10 bg-white/[0.04]"}`}>
                             <div className="flex items-center justify-between gap-3">
@@ -840,6 +864,12 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                               <p className="text-[11px] text-white/35">{new Date(chat.createdAt).toLocaleString()}</p>
                             </div>
                             <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-white/70">{chat.message}</p>
+                            {imageUrl ? (
+                              <div className="mt-3 overflow-hidden rounded-md border border-white/10 bg-black/35">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={imageUrl} alt={chat.status || c.hermesChat} className="aspect-square w-full object-cover" />
+                              </div>
+                            ) : null}
                             {chat.status ? <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-white/35">{chat.status}</p> : null}
                           </div>
                         );

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PostlyContentStatus, PostlyContentType, PostlyPlanStatus } from "@prisma/client";
+import { PostlyAssetSource, PostlyAssetType, PostlyContentStatus, PostlyContentType, PostlyPlanStatus } from "@prisma/client";
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import { asString, readJson, writeAgentLog } from "@/lib/postly";
@@ -31,6 +31,19 @@ function promptTopic(prompt: string) {
     .slice(0, 80);
 }
 
+function extractLaunchLine(prompt: string) {
+  const match = prompt.match(/(\d{1,2})\s*(?:sariin|saryn|sar|сарын|сар)\s*(\d{1,2})/i);
+  if (!match) return null;
+
+  const dateLine = `${match[1]}-р сарын ${match[2]}-наас`;
+  const mentionsLaunch = /uil ajilgaa|үйл ажиллагаа|ehl|эхл/i.test(prompt);
+  return mentionsLaunch ? `${dateLine} үйл ажиллагаа эхэлнэ` : dateLine;
+}
+
+function generatedPosterUrl(contentItemId: string) {
+  return `/api/postly/content-items/${contentItemId}/poster`;
+}
+
 function buildHermesDraft(input: {
   prompt: string;
   company: {
@@ -46,13 +59,14 @@ function buildHermesDraft(input: {
   const brandName = input.company.companyName || "энэ брэнд";
   const product = input.company.productsServicesPostly[0];
   const topic = promptTopic(input.prompt);
+  const launchLine = extractLaunchLine(input.prompt);
   const tone = input.company.brandGuideline?.toneOfVoice || "ойлгомжтой, итгэл төрүүлэх";
   const colors = input.company.brandGuideline?.brandColors?.slice(0, 3).join(", ") || "brand өнгөнүүд";
   const offer = product?.name || input.company.businessType || "шинэ санал";
   const benefit = product?.benefits?.[0] || "брэндийн үнэ цэнийг товч, тод харуулах";
   const audience = product?.targetCustomer || "зорилтот хэрэглэгч";
-  const title = `${brandName} - ${topic}`;
-  const headline = `${offer}-ийг ${audience}-д хүргэх санаа`;
+  const title = `${brandName} - ${launchLine || topic}`;
+  const headline = launchLine || `${offer}-ийг ${audience}-д хүргэх санаа`;
   const caption = [
     `${brandName}-ийн ${offer}-ийг онцлох постын draft:`,
     "",
@@ -65,8 +79,9 @@ function buildHermesDraft(input: {
     `Use ${colors}.`,
     input.company.brandGuideline?.visualStyle || "Premium, clean, product-focused composition.",
     input.templateName ? `Follow template style: ${input.templateName}.` : "Keep layout simple with strong headline space.",
+    launchLine ? `Main poster message: ${launchLine}.` : "",
     `Subject: ${offer}.`,
-  ].join(" ");
+  ].filter(Boolean).join(" ");
   const creativeDirection = [
     `Admin prompt: ${input.prompt}`,
     `Tone: ${tone}`,
@@ -188,6 +203,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     include: { template: true },
   });
 
+  const posterAssetUrl = generatedPosterUrl(item.id);
+  await prisma.contentAsset.create({
+    data: {
+      companyId: id,
+      contentItemId: item.id,
+      assetType: PostlyAssetType.IMAGE,
+      fileUrl: posterAssetUrl,
+      source: PostlyAssetSource.GENERATED,
+    },
+  });
+
+  const itemWithAssets = await prisma.contentItem.findUnique({
+    where: { id: item.id },
+    include: { template: true, assets: true },
+  });
+
   const hermesTriggered = await triggerHermes({ companyId: id, contentItemId: item.id, prompt });
 
   await prisma.hermesChatMessage.createMany({
@@ -201,6 +232,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         metadata: {
           contentType: item.contentType,
           templateId: item.templateId,
+          posterAssetUrl,
         },
       },
       {
@@ -212,6 +244,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         metadata: {
           contentType: item.contentType,
           templateId: item.templateId,
+          posterAssetUrl,
+          templatePreviewUrl: selectedTemplate?.previewImageUrl || selectedTemplate?.templateFileUrl,
           hermesTriggered,
         },
       },
@@ -258,5 +292,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     rawPayload: { contentItemId: item.id },
   });
 
-  return NextResponse.json({ ok: true, item, log, chatMessages, hermesTriggered }, { status: 201 });
+  return NextResponse.json({ ok: true, item: itemWithAssets || item, log, chatMessages, hermesTriggered }, { status: 201 });
 }

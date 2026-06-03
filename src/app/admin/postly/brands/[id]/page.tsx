@@ -51,7 +51,7 @@ export default async function AdminPostlyBrandPage({
       contentItems: {
         orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
         take: 12,
-        include: { template: true },
+        include: { template: true, assets: true },
       },
       agentLogs: {
         orderBy: { createdAt: "desc" },
