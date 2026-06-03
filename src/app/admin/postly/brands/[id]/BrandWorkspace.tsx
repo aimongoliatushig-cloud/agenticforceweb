@@ -95,6 +95,8 @@ const emptyProduct: ProductForm = {
   painPoints: "",
 };
 
+const tabTargets = ["brand-profile", "brand-profile", "products-services", "templates", "hermes-chat", "content-plan"];
+
 const copy = {
   en: {
     back: "Back to brands",
@@ -255,6 +257,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
   const [items, setItems] = useState<Item[]>(brand.contentItems);
   const [logs, setLogs] = useState<AgentLog[]>(brand.agentLogs);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(brand.hermesChatMessages);
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [templateForm, setTemplateForm] = useState<TemplateForm>(emptyTemplate);
   const [templateFile, setTemplateFile] = useState<File | null>(null);
   const [editingTemplateId, setEditingTemplateId] = useState("");
@@ -310,6 +313,11 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
 
   function updateProduct<K extends keyof ProductForm>(key: K, value: ProductForm[K]) {
     setProductForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function activateTab(index: number) {
+    setActiveTabIndex(index);
+    document.getElementById(tabTargets[index])?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function productPayload() {
@@ -557,8 +565,11 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
             {c.tabs.map((tab, index) => (
               <button
                 key={tab}
+                type="button"
+                onClick={() => activateTab(index)}
+                aria-pressed={activeTabIndex === index}
                 className={`border-b-2 px-1 pb-3 font-medium transition ${
-                  index === 0 ? "border-amber-300 text-amber-200" : "border-transparent text-white/45 hover:text-white"
+                  activeTabIndex === index ? "border-amber-300 text-amber-200" : "border-transparent text-white/45 hover:text-white"
                 }`}
               >
                 {tab}
@@ -569,7 +580,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)_430px]">
           <aside className="grid content-start gap-6">
-            <Panel title={c.brandInformation} icon={<Sparkles className="h-5 w-5" />}>
+            <Panel id="brand-profile" title={c.brandInformation} icon={<Sparkles className="h-5 w-5" />}>
               <div className="flex items-center gap-4">
                 <div className="grid h-20 w-20 place-items-center rounded-full border border-white/10 bg-black text-2xl font-black text-amber-200">
                   {(brand.companyName || "P").slice(0, 1)}
@@ -591,7 +602,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
               </div>
             </Panel>
 
-            <Panel title={c.productsServices} icon={<Store className="h-5 w-5" />}>
+            <Panel id="products-services" title={c.productsServices} icon={<Store className="h-5 w-5" />}>
               <div className="grid gap-3">
                 <Field label={c.productName} value={productForm.name} onChange={(value) => updateProduct("name", value)} placeholder="Coffee subscription" />
                 <Field label={c.productDescription} value={productForm.description} onChange={(value) => updateProduct("description", value)} placeholder="Short product summary" />
@@ -646,7 +657,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
               </div>
             </Panel>
 
-            <Panel title={editingTemplateId ? c.editTemplate : c.addTemplate} icon={editingTemplateId ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}>
+            <Panel id="templates" title={editingTemplateId ? c.editTemplate : c.addTemplate} icon={editingTemplateId ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}>
               <div className="grid gap-3">
                 <Field label={c.name} value={templateForm.name} onChange={(value) => updateTemplate("name", value)} placeholder="June promo poster" />
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -742,7 +753,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
               </div>
             </Panel>
 
-            <Panel title={c.contentQueue} icon={<FileText className="h-5 w-5" />}>
+            <Panel id="content-plan" title={c.contentQueue} icon={<FileText className="h-5 w-5" />}>
               <div className="grid gap-3">
                 {items.length === 0 ? (
                   <p className="text-sm text-white/50">{c.noContent}</p>
@@ -767,7 +778,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
           </section>
 
           <aside className="grid content-start gap-6">
-            <Panel title={c.hermesChat} icon={<MessageSquareText className="h-5 w-5" />}>
+            <Panel id="hermes-chat" title={c.hermesChat} icon={<MessageSquareText className="h-5 w-5" />}>
               <div className="grid gap-4">
                 <div className="rounded-md border border-amber-300/20 bg-amber-300/10 p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-amber-100">
@@ -869,9 +880,9 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function Panel({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
+function Panel({ id, title, icon, children }: { id?: string; title: string; icon: ReactNode; children: ReactNode }) {
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
+    <section id={id} className="scroll-mt-28 rounded-lg border border-white/10 bg-white/[0.04] p-5">
       <div className="mb-4 flex items-center gap-2 text-amber-200">
         {icon}
         <h2 className="text-sm font-bold uppercase tracking-[0.14em]">{title}</h2>
