@@ -5,6 +5,10 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 function isAdminPath(request: NextRequest) {
   return request.nextUrl.pathname === "/admin" || request.nextUrl.pathname.startsWith("/admin/");
 }
+
+function isAdminBypassPath(request: NextRequest) {
+  return isAdminPath(request) || request.nextUrl.pathname.startsWith("/api/admin/");
+}
 const clerkConfigured = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
 );
@@ -20,7 +24,7 @@ function hasAdminBypass(request: NextRequest) {
 }
 
 function handleAdminBypass(request: NextRequest) {
-  if (!isAdminPath(request)) return null;
+  if (!isAdminBypassPath(request)) return null;
 
   const token = adminBypassToken();
   if (!token) return null;

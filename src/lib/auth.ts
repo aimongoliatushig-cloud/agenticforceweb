@@ -1,4 +1,4 @@
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
 import { hasDatabaseUrl, prisma } from "./db";
 
@@ -45,42 +45,62 @@ async function hasAdminBypassCookie() {
 export async function getCurrentUserId() {
   try {
     const session = await auth();
-    return session.userId ?? null;
+    if (session.userId) return session.userId;
+  } catch {
+    // Fall through to currentUser; auth() can be unavailable in some API paths.
+  }
+
+  try {
+    return (await currentUser())?.id ?? null;
   } catch {
     return null;
   }
 }
 
 export async function getCurrentUserEmails() {
+  const emails = new Set<string>();
+  let userId: string | null = null;
+
   try {
     const session = await auth();
-    if (!session.userId) return [];
+    userId = session.userId ?? null;
+    sessionEmails(session).forEach((email) => emails.add(email));
+  } catch {
+    // Continue with currentUser and local user fallbacks below.
+  }
 
-    const emails = new Set(sessionEmails(session));
+  try {
+    const clerkUser = await currentUser();
+    if (clerkUser?.id) userId = clerkUser.id;
+    clerkUser?.emailAddresses.forEach((item) => {
+      if (item.emailAddress) emails.add(item.emailAddress.toLowerCase());
+    });
+  } catch {
+    // Backend client fallback below can still resolve emails from userId.
+  }
 
+  if (userId) {
     try {
       const appUser = hasDatabaseUrl()
-        ? await prisma.user.findUnique({ where: { clerkUserId: session.userId }, select: { email: true } })
+        ? await prisma.user.findUnique({ where: { clerkUserId: userId }, select: { email: true } })
         : null;
       if (appUser?.email) emails.add(appUser.email.toLowerCase());
     } catch {
-      // Best-effort enrichment; Clerk remains the source of truth below.
+      // Best-effort enrichment; Clerk remains the source of truth.
     }
 
     try {
       const client = await clerkClient();
-      const clerkUser = await client.users.getUser(session.userId);
+      const clerkUser = await client.users.getUser(userId);
       clerkUser.emailAddresses.forEach((item) => {
         if (item.emailAddress) emails.add(item.emailAddress.toLowerCase());
       });
     } catch {
       // Session and local user emails are enough for fallback matching.
     }
-
-    return Array.from(emails).filter(Boolean);
-  } catch {
-    return [];
   }
+
+  return Array.from(emails).filter(Boolean);
 }
 
 export async function getAppUser() {
@@ -101,28 +121,9 @@ export async function isAdminUser() {
     return true;
   }
 
-  try {
-    const session = await auth();
-    if (!session.userId) {
-      return false;
-    }
-
-    if (sessionEmails(session).some((email) => isAdminEmail(email))) {
-      return true;
-    }
-
-    const client = await clerkClient();
-    const clerkUser = await client.users.getUser(session.userId);
-    const emails = clerkUser.emailAddresses
-      .map((item) => item.emailAddress.toLowerCase())
-      .filter(Boolean);
-
-    if (emails.some((email) => isAdminEmail(email))) {
-      return true;
-    }
-  } catch {
-    // If Clerk's backend client is temporarily unavailable, continue to the
-    // local user-role fallback below instead of locking known admins out.
+  const emails = await getCurrentUserEmails();
+  if (emails.some((email) => isAdminEmail(email))) {
+    return true;
   }
 
   const appUser = await getAppUser();
