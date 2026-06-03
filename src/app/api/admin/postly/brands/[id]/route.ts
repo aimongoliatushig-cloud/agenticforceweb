@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
+import { uploadBrandLogo } from "@/lib/postly-admin-templates";
 import { asString, asStringArray, readJson, writeAgentLog } from "@/lib/postly";
 
 export const dynamic = "force-dynamic";
@@ -38,12 +39,21 @@ function guidelinePayload(body: Record<string, unknown>) {
   };
 }
 
+async function readBrandBody(request: Request) {
+  const isMultipart = request.headers.get("content-type")?.includes("multipart/form-data");
+  const form = isMultipart ? await request.formData() : null;
+  const body = form
+    ? Object.fromEntries(Array.from(form.entries()).filter(([, value]) => typeof value === "string"))
+    : await readJson(request);
+  return { body, logoFile: form?.get("logoFile") };
+}
+
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const denied = await requireAdmin();
   if (denied) return denied;
 
   const { id } = await params;
-  const body = await readJson(request);
+  const { body, logoFile } = await readBrandBody(request);
   const data = brandPayload(body);
   if (!data.companyName) {
     return NextResponse.json({ error: "Brand name is required" }, { status: 400 });
@@ -51,6 +61,16 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
   const existing = await prisma.companyProfile.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Brand not found" }, { status: 404 });
+
+  let uploadedLogo: Awaited<ReturnType<typeof uploadBrandLogo>> | null = null;
+  if (logoFile instanceof File && logoFile.size > 0) {
+    try {
+      uploadedLogo = await uploadBrandLogo({ companyId: id, file: logoFile });
+      data.logoUrl = uploadedLogo.url;
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "Logo upload failed" }, { status: 400 });
+    }
+  }
 
   const brand = await prisma.companyProfile.update({
     where: { id },
@@ -82,7 +102,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     action: "brand.update",
     status: "success",
     message: `Admin updated brand ${brand.companyName}`,
-    rawPayload: body,
+    rawPayload: { ...body, uploadedLogo },
   });
 
   return NextResponse.json({ ok: true, brand });

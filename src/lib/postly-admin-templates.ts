@@ -9,6 +9,13 @@ export const allowedTemplateMimeTypes = new Set([
   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 ]);
 
+export const allowedLogoMimeTypes = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/svg+xml",
+]);
+
 export function contentType(value: unknown) {
   const normalized = asString(value)?.toUpperCase();
   return Object.values(PostlyContentType).includes(normalized as PostlyContentType)
@@ -43,19 +50,26 @@ export function getTemplateStorageConfig() {
   };
 }
 
-function safeFileName(value: string) {
+function safeFileName(value: string, fallback = "template-file") {
   const cleaned = value
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return cleaned || "template-file";
+  return cleaned || fallback;
 }
 
 function publicStorageUrl(input: { supabaseUrl: string; bucket: string; path: string }) {
   return `${input.supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/${input.bucket}/${input.path}`;
 }
 
-export async function uploadTemplateFile(input: { companyId: string; file: File }) {
+async function uploadStorageFile(input: {
+  path: string;
+  file: File;
+  allowedMimeTypes: Set<string>;
+  maxBytes: number;
+  unsupportedMessage: string;
+  tooLargeMessage: string;
+}) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   const bucket = getTemplateStorageConfig().bucket;
@@ -64,16 +78,15 @@ export async function uploadTemplateFile(input: { companyId: string; file: File 
     throw new Error("Supabase Storage service key is not configured");
   }
 
-  if (!allowedTemplateMimeTypes.has(input.file.type)) {
-    throw new Error("Unsupported template file type");
+  if (!input.allowedMimeTypes.has(input.file.type)) {
+    throw new Error(input.unsupportedMessage);
   }
 
-  if (input.file.size > 20 * 1024 * 1024) {
-    throw new Error("Template file must be 20MB or smaller");
+  if (input.file.size > input.maxBytes) {
+    throw new Error(input.tooLargeMessage);
   }
 
-  const path = `${input.companyId}/${Date.now()}-${safeFileName(input.file.name)}`;
-  const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/${bucket}/${path}`, {
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/${bucket}/${input.path}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${supabaseKey}`,
@@ -91,7 +104,29 @@ export async function uploadTemplateFile(input: { companyId: string; file: File 
 
   return {
     bucket,
-    path,
-    url: publicStorageUrl({ supabaseUrl, bucket, path }),
+    path: input.path,
+    url: publicStorageUrl({ supabaseUrl, bucket, path: input.path }),
   };
+}
+
+export async function uploadTemplateFile(input: { companyId: string; file: File }) {
+  return uploadStorageFile({
+    path: `${input.companyId}/${Date.now()}-${safeFileName(input.file.name)}`,
+    file: input.file,
+    allowedMimeTypes: allowedTemplateMimeTypes,
+    maxBytes: 20 * 1024 * 1024,
+    unsupportedMessage: "Unsupported template file type",
+    tooLargeMessage: "Template file must be 20MB or smaller",
+  });
+}
+
+export async function uploadBrandLogo(input: { companyId?: string; file: File }) {
+  return uploadStorageFile({
+    path: `logos/${input.companyId || "new"}/${Date.now()}-${safeFileName(input.file.name, "brand-logo")}`,
+    file: input.file,
+    allowedMimeTypes: allowedLogoMimeTypes,
+    maxBytes: 5 * 1024 * 1024,
+    unsupportedMessage: "Unsupported logo file type",
+    tooLargeMessage: "Logo file must be 5MB or smaller",
+  });
 }

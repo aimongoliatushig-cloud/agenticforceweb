@@ -87,7 +87,7 @@ const copy = {
       phone: "Phone",
       email: "Email",
       website: "Website",
-      logoUrl: "Logo URL",
+      logoUrl: "Logo file",
       facebookUrl: "Facebook",
       instagramUrl: "Instagram",
       tiktokUrl: "TikTok",
@@ -133,7 +133,7 @@ const copy = {
       phone: "Утас",
       email: "Имэйл",
       website: "Website",
-      logoUrl: "Logo URL",
+      logoUrl: "Logo file",
       facebookUrl: "Facebook",
       instagramUrl: "Instagram",
       tiktokUrl: "TikTok",
@@ -185,6 +185,7 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
   const [query, setQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -239,6 +240,7 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
   function openCreate() {
     setEditingBrand(null);
     setForm(emptyForm);
+    setLogoFile(null);
     setFormOpen(true);
     setMessage("");
   }
@@ -246,6 +248,7 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
   function openEdit(brand: Brand) {
     setEditingBrand(brand);
     setForm(formFromBrand(brand));
+    setLogoFile(null);
     setFormOpen(true);
     setMessage("");
   }
@@ -256,10 +259,15 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
 
     try {
       const url = editingBrand ? `/api/admin/postly/brands/${editingBrand.id}` : "/api/admin/postly/brands";
+      const body = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        body.append(key, value);
+      });
+      if (logoFile) body.append("logoFile", logoFile);
+
       const response = await fetch(url, {
         method: editingBrand ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body,
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || c.saveFailed);
@@ -269,6 +277,7 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
       );
       setFormOpen(false);
       setForm(emptyForm);
+      setLogoFile(null);
       setEditingBrand(null);
       setMessage(editingBrand ? c.savedUpdate : c.savedCreate);
     } catch (error) {
@@ -369,7 +378,11 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
               <Link href={withLang(`/admin/postly/brands/${brand.id}`)} className="block p-5">
                 <div>
                   <div className="grid h-16 w-16 place-items-center rounded-full border border-white/10 bg-black text-xl font-black text-amber-200">
-                    {(brand.companyName || "P").slice(0, 1)}
+                    {brand.logoUrl ? (
+                      <img src={brand.logoUrl} alt={`${brand.companyName || c.unnamed} logo`} className="h-full w-full rounded-full object-cover" />
+                    ) : (
+                      (brand.companyName || "P").slice(0, 1)
+                    )}
                   </div>
                   <h2 className="mt-4 text-lg font-bold">{brand.companyName || c.unnamed}</h2>
                   <p className="mt-1 text-sm text-white/50">{brand.businessType || c.brandFallback}</p>
@@ -435,7 +448,22 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
               <Field label={c.fields.phone} value={form.phone} onChange={(value) => update("phone", value)} placeholder="+976..." />
               <Field label={c.fields.email} value={form.email} onChange={(value) => update("email", value)} placeholder="hello@brand.mn" />
               <Field label={c.fields.website} value={form.website} onChange={(value) => update("website", value)} placeholder="https://..." />
-              <Field label={c.fields.logoUrl} value={form.logoUrl} onChange={(value) => update("logoUrl", value)} placeholder="https://..." />
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/45">{c.fields.logoUrl}</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)}
+                  className="mt-2 w-full rounded-md border border-white/10 bg-black/45 px-3 py-2 text-sm text-white file:mr-3 file:rounded-md file:border-0 file:bg-amber-300 file:px-3 file:py-2 file:text-sm file:font-bold file:text-black"
+                />
+                <span className="mt-2 block text-xs text-white/35">{logoFile ? logoFile.name : "PNG, JPG, WEBP, SVG"}</span>
+                {form.logoUrl && !logoFile ? (
+                  <span className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 px-2.5 py-1 text-xs text-white/45">
+                    <span className="h-4 w-4 rounded-full border border-white/10 bg-cover bg-center" style={{ backgroundImage: `url(${form.logoUrl})` }} />
+                    Current logo
+                  </span>
+                ) : null}
+              </label>
               <Field label={c.fields.facebookUrl} value={form.facebookUrl} onChange={(value) => update("facebookUrl", value)} placeholder="https://facebook.com/..." />
               <Field label={c.fields.instagramUrl} value={form.instagramUrl} onChange={(value) => update("instagramUrl", value)} placeholder="https://instagram.com/..." />
               <Field label={c.fields.tiktokUrl} value={form.tiktokUrl} onChange={(value) => update("tiktokUrl", value)} placeholder="https://tiktok.com/..." />
