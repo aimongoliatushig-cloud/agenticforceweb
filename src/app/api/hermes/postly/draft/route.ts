@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PostlyAssetSource, PostlyAssetType, PostlyContentStatus } from "@prisma/client";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
+import { uploadGeneratedAssetFromUrl } from "@/lib/postly-admin-templates";
 import { asString, readJson, requireSecret, writeAgentLog } from "@/lib/postly";
 import { parsePostlyContentStatus } from "@/lib/postly-status";
 
@@ -58,6 +59,18 @@ function imageUrls(body: Record<string, unknown>) {
   return Array.from(urls);
 }
 
+async function storageBackedUrl(input: { companyId: string; contentItemId: string; sourceUrl: string }) {
+  if (input.sourceUrl.startsWith("https://")) return input.sourceUrl;
+
+  try {
+    const uploaded = await uploadGeneratedAssetFromUrl(input);
+    return uploaded.url;
+  } catch (error) {
+    console.error("Generated asset mirror failed", error);
+    return input.sourceUrl;
+  }
+}
+
 export async function POST(request: Request) {
   const denied = requireSecret(request, "HERMES_AGENT_SECRET", "x-hermes-secret");
   if (denied) return denied;
@@ -73,7 +86,7 @@ export async function POST(request: Request) {
   if (!existing) return NextResponse.json({ error: "Content item not found" }, { status: 404 });
 
   const status = nextStatus(body);
-  const urls = imageUrls(body);
+  const sourceUrls = imageUrls(body);
   const item = await prisma.contentItem.update({
     where: { id: contentItemId },
     data: {
@@ -89,12 +102,22 @@ export async function POST(request: Request) {
     include: { template: true, assets: true },
   });
 
-  for (const [index, fileUrl] of urls.entries()) {
+  const urls: string[] = [];
+
+  for (const [index, sourceUrl] of sourceUrls.entries()) {
+    const fileUrl = await storageBackedUrl({ companyId: item.companyId, contentItemId: item.id, sourceUrl });
+    urls.push(fileUrl);
     const existingAsset = await prisma.contentAsset.findFirst({
-      where: { contentItemId: item.id, fileUrl },
+      where: { contentItemId: item.id, fileUrl: { in: [sourceUrl, fileUrl] } },
       select: { id: true },
     });
-    if (existingAsset) continue;
+    if (existingAsset) {
+      await prisma.contentAsset.update({
+        where: { id: existingAsset.id },
+        data: { fileUrl, source: PostlyAssetSource.HERMES },
+      });
+      continue;
+    }
 
     await prisma.contentAsset.create({
       data: {
@@ -119,11 +142,12 @@ export async function POST(request: Request) {
         companyId: item.companyId,
         contentItemId: item.id,
         sender: "hermes",
-        message: asString(body.message) || "Kie.ai-аар poster зураг generate хийгдлээ.",
+        message: asString(body.message) || "Hermes Kie.ai generated the poster image.",
         status: "image_generated",
         metadata: {
           posterAssetUrl: urls[0],
           imageUrls: urls,
+          sourceImageUrls: sourceUrls,
           kieTaskId: asString(body.kieTaskId) || asString(body.kie_task_id) || asString(body.taskId) || asString(body.task_id),
         },
       },
@@ -137,7 +161,7 @@ export async function POST(request: Request) {
     action: "postly.draft.upsert",
     status,
     message: `Hermes draft saved for ${item.title ?? item.id}`,
-    rawPayload: { ...body, imageUrls: urls },
+    rawPayload: { ...body, imageUrls: urls, sourceImageUrls: sourceUrls },
   });
 
   return NextResponse.json({ ok: true, item: itemWithAssets || item });

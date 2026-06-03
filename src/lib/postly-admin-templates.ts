@@ -16,6 +16,12 @@ export const allowedLogoMimeTypes = new Set([
   "image/svg+xml",
 ]);
 
+const allowedGeneratedAssetMimeTypes = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+]);
+
 export function contentType(value: unknown) {
   const normalized = asString(value)?.toUpperCase();
   return Object.values(PostlyContentType).includes(normalized as PostlyContentType)
@@ -62,9 +68,11 @@ function publicStorageUrl(input: { supabaseUrl: string; bucket: string; path: st
   return `${input.supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/${input.bucket}/${input.path}`;
 }
 
-async function uploadStorageFile(input: {
+async function uploadStorageObject(input: {
   path: string;
-  file: File;
+  body: Buffer;
+  contentType: string;
+  size: number;
   allowedMimeTypes: Set<string>;
   maxBytes: number;
   unsupportedMessage: string;
@@ -78,11 +86,11 @@ async function uploadStorageFile(input: {
     throw new Error("Supabase Storage service key is not configured");
   }
 
-  if (!input.allowedMimeTypes.has(input.file.type)) {
+  if (!input.allowedMimeTypes.has(input.contentType)) {
     throw new Error(input.unsupportedMessage);
   }
 
-  if (input.file.size > input.maxBytes) {
+  if (input.size > input.maxBytes) {
     throw new Error(input.tooLargeMessage);
   }
 
@@ -90,11 +98,11 @@ async function uploadStorageFile(input: {
     method: "POST",
     headers: {
       Authorization: `Bearer ${supabaseKey}`,
-      "Content-Type": input.file.type,
+      "Content-Type": input.contentType,
       "Cache-Control": "3600",
       "x-upsert": "false",
     },
-    body: Buffer.from(await input.file.arrayBuffer()),
+    body: input.body as unknown as BodyInit,
   });
 
   if (!response.ok) {
@@ -107,6 +115,26 @@ async function uploadStorageFile(input: {
     path: input.path,
     url: publicStorageUrl({ supabaseUrl, bucket, path: input.path }),
   };
+}
+
+async function uploadStorageFile(input: {
+  path: string;
+  file: File;
+  allowedMimeTypes: Set<string>;
+  maxBytes: number;
+  unsupportedMessage: string;
+  tooLargeMessage: string;
+}) {
+  return uploadStorageObject({
+    path: input.path,
+    body: Buffer.from(await input.file.arrayBuffer()),
+    contentType: input.file.type,
+    size: input.file.size,
+    allowedMimeTypes: input.allowedMimeTypes,
+    maxBytes: input.maxBytes,
+    unsupportedMessage: input.unsupportedMessage,
+    tooLargeMessage: input.tooLargeMessage,
+  });
 }
 
 export async function uploadTemplateFile(input: { companyId: string; file: File }) {
@@ -128,5 +156,32 @@ export async function uploadBrandLogo(input: { companyId?: string; file: File })
     maxBytes: 5 * 1024 * 1024,
     unsupportedMessage: "Unsupported logo file type",
     tooLargeMessage: "Logo file must be 5MB or smaller",
+  });
+}
+
+function extensionFromMime(contentType: string) {
+  if (contentType === "image/jpeg") return "jpg";
+  if (contentType === "image/webp") return "webp";
+  return "png";
+}
+
+export async function uploadGeneratedAssetFromUrl(input: { companyId: string; contentItemId: string; sourceUrl: string }) {
+  const response = await fetch(input.sourceUrl, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Generated asset download failed with ${response.status}`);
+  }
+
+  const contentType = response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() || "image/png";
+  const body = Buffer.from(await response.arrayBuffer());
+
+  return uploadStorageObject({
+    path: `generated/${input.companyId}/${input.contentItemId}/${Date.now()}-${safeFileName(input.contentItemId, "poster")}.${extensionFromMime(contentType)}`,
+    body,
+    contentType,
+    size: body.byteLength,
+    allowedMimeTypes: allowedGeneratedAssetMimeTypes,
+    maxBytes: 25 * 1024 * 1024,
+    unsupportedMessage: "Unsupported generated asset file type",
+    tooLargeMessage: "Generated asset must be 25MB or smaller",
   });
 }
