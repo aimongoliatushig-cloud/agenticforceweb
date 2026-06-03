@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PostlyAssetSource, PostlyAssetType, PostlyContentStatus, PostlyContentType, PostlyPlanStatus } from "@prisma/client";
+import { PostlyContentStatus, PostlyContentType, PostlyPlanStatus } from "@prisma/client";
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import { asString, readJson, writeAgentLog } from "@/lib/postly";
@@ -38,10 +38,6 @@ function extractLaunchLine(prompt: string) {
   const dateLine = `${match[1]}-р сарын ${match[2]}-наас`;
   const mentionsLaunch = /uil ajilgaa|үйл ажиллагаа|ehl|эхл/i.test(prompt);
   return mentionsLaunch ? `${dateLine} үйл ажиллагаа эхэлнэ` : dateLine;
-}
-
-function generatedPosterUrl(contentItemId: string) {
-  return `/api/postly/content-items/${contentItemId}/poster`;
 }
 
 function buildHermesDraft(input: {
@@ -89,22 +85,22 @@ function buildHermesDraft(input: {
     `Goal: ${benefit}`,
   ].join("\n");
   const chatReply = [
-    `За, ойлголоо. ${brandName}-ийн context дээр суурилаад эхний draft-ийг бэлдлээ.`,
+    `За, ойлголоо. ${brandName}-ийн context-ийг Hermes рүү илгээлээ.`,
     "",
     `Гарчиг: ${title}`,
     "",
     `Caption:`,
     caption,
     "",
-    `Image prompt: ${imagePrompt}`,
+    `Hermes image prompt draft: ${imagePrompt}`,
     "",
-    "Дараагийн алхам: энэ draft-ийг Content queue дээрээс шалгаад, хэрэгтэй бол prompt-оо дахин явуулаад засварлуулж болно.",
+    "Дараагийн алхам: Hermes Kie.ai skill ашиглаад poster зураг generate хийнэ. Зураг бэлэн болмогц Content queue болон chat дээр автоматаар гарна.",
   ].join("\n");
 
   return { title, headline, caption, imagePrompt, creativeDirection, chatReply };
 }
 
-async function triggerHermes(input: { companyId: string; contentItemId: string; prompt: string }) {
+async function triggerHermes(input: Record<string, unknown>) {
   const baseUrl = process.env.HERMES_POSTLY_PROMPT_URL || (process.env.HERMES_BASE_URL ? `${process.env.HERMES_BASE_URL.replace(/\/$/, "")}/webhooks/postly-prompt` : "");
   const secret = process.env.HERMES_AGENT_SECRET;
   if (!baseUrl || !secret) return false;
@@ -129,6 +125,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const denied = await requireAdmin();
   if (denied) return denied;
 
+  const origin = new URL(request.url).origin;
   const { id } = await params;
   const body = await readJson(request);
   const prompt = asString(body.prompt);
@@ -198,28 +195,45 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       headline: draft.headline,
       imagePrompt: draft.imagePrompt,
       creativeDirection: draft.creativeDirection,
-      status: PostlyContentStatus.DRAFT_GENERATED,
+      status: PostlyContentStatus.PLANNED,
     },
     include: { template: true },
   });
 
-  const posterAssetUrl = generatedPosterUrl(item.id);
-  await prisma.contentAsset.create({
-    data: {
-      companyId: id,
-      contentItemId: item.id,
-      assetType: PostlyAssetType.IMAGE,
-      fileUrl: posterAssetUrl,
-      source: PostlyAssetSource.GENERATED,
+  const hermesTriggered = await triggerHermes({
+    companyId: id,
+    contentItemId: item.id,
+    prompt,
+    contentType: item.contentType,
+    templateId: item.templateId,
+    title: draft.title,
+    caption: draft.caption,
+    headline: draft.headline,
+    imagePrompt: draft.imagePrompt,
+    creativeDirection: draft.creativeDirection,
+    callbackUrl: `${origin}/api/hermes/postly/draft`,
+    instruction: "Generate the final image with Kie.ai using the Hermes kie-content-maker skill, then POST the generated image URL back to callbackUrl with imageUrl or assets[].fileUrl.",
+    brand: {
+      companyName: company.companyName,
+      businessType: company.businessType,
+      description: company.description,
+      guideline: company.brandGuideline,
+      products: company.productsServicesPostly,
+      socialAccounts: company.socialAccounts.map((account) => ({ platform: account.platform, pageName: account.pageName, status: account.status })),
     },
+    template: selectedTemplate
+      ? {
+          id: selectedTemplate.id,
+          name: selectedTemplate.name,
+          type: selectedTemplate.type,
+          platform: selectedTemplate.platform,
+          category: selectedTemplate.category,
+          size: selectedTemplate.size,
+          previewImageUrl: selectedTemplate.previewImageUrl,
+          templateFileUrl: selectedTemplate.templateFileUrl,
+        }
+      : null,
   });
-
-  const itemWithAssets = await prisma.contentItem.findUnique({
-    where: { id: item.id },
-    include: { template: true, assets: true },
-  });
-
-  const hermesTriggered = await triggerHermes({ companyId: id, contentItemId: item.id, prompt });
 
   await prisma.hermesChatMessage.createMany({
     data: [
@@ -232,7 +246,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         metadata: {
           contentType: item.contentType,
           templateId: item.templateId,
-          posterAssetUrl,
         },
       },
       {
@@ -240,11 +253,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         contentItemId: item.id,
         sender: "hermes",
         message: draft.chatReply,
-        status: "draft_generated",
+        status: hermesTriggered ? "sent_to_hermes" : "queued",
         metadata: {
           contentType: item.contentType,
           templateId: item.templateId,
-          posterAssetUrl,
           templatePreviewUrl: selectedTemplate?.previewImageUrl || selectedTemplate?.templateFileUrl,
           hermesTriggered,
         },
@@ -264,8 +276,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       contentItemId: item.id,
       agentName: "Postly Admin",
       action: "admin_chat.prompt",
-      status: "draft_generated",
-      message: "Hermes chat draft generated",
+      status: hermesTriggered ? "sent_to_hermes" : "queued",
+      message: hermesTriggered ? "Hermes prompt sent for Kie.ai image generation" : "Hermes prompt queued for Kie.ai image generation",
       rawPayload: {
         prompt,
         contentType: item.contentType,
@@ -287,10 +299,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     contentItemId: item.id,
     agentName: "Hermes",
     action: "postly.prompt.request",
-    status: "draft_generated",
-    message: `Hermes chat reply generated for ${company.companyName ?? id}`,
+    status: hermesTriggered ? "sent_to_hermes" : "queued",
+    message: `Hermes Kie.ai generation request ${hermesTriggered ? "sent" : "queued"} for ${company.companyName ?? id}`,
     rawPayload: { contentItemId: item.id },
   });
 
-  return NextResponse.json({ ok: true, item: itemWithAssets || item, log, chatMessages, hermesTriggered }, { status: 201 });
+  return NextResponse.json({ ok: true, item, log, chatMessages, hermesTriggered }, { status: 201 });
 }
