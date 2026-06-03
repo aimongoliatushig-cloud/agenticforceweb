@@ -98,10 +98,10 @@ export default async function PostlyClientDashboardPage({
 }: {
   params: Promise<{ locale?: string }>;
 }) {
-  const session = await auth();
   const { locale } = await params;
   const lang = normalizeLocale(locale);
-  if (!session.userId) redirect(`/${lang}`);
+  const session = await auth().catch(() => null);
+  if (!session?.userId) redirect(`/${lang}`);
 
   const brand = await findClientBrand(await getCurrentUserEmails());
   if (!brand) redirect(`/${lang}/dashboard`);
