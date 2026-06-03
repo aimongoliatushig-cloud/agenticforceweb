@@ -24,6 +24,71 @@ function monthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
+function promptTopic(prompt: string) {
+  return prompt
+    .replace(/\s+/g, " ")
+    .replace(/[.!?]+$/g, "")
+    .slice(0, 80);
+}
+
+function buildHermesDraft(input: {
+  prompt: string;
+  company: {
+    companyName: string | null;
+    businessType: string | null;
+    description: string | null;
+    brandGuideline: { toneOfVoice?: string | null; visualStyle?: string | null; brandColors: string[] } | null;
+    productsServicesPostly: { name: string; benefits: string[]; targetCustomer: string | null }[];
+  };
+  type: PostlyContentType;
+  templateName?: string | null;
+}) {
+  const brandName = input.company.companyName || "энэ брэнд";
+  const product = input.company.productsServicesPostly[0];
+  const topic = promptTopic(input.prompt);
+  const tone = input.company.brandGuideline?.toneOfVoice || "ойлгомжтой, итгэл төрүүлэх";
+  const colors = input.company.brandGuideline?.brandColors?.slice(0, 3).join(", ") || "brand өнгөнүүд";
+  const offer = product?.name || input.company.businessType || "шинэ санал";
+  const benefit = product?.benefits?.[0] || "брэндийн үнэ цэнийг товч, тод харуулах";
+  const audience = product?.targetCustomer || "зорилтот хэрэглэгч";
+  const title = `${brandName} - ${topic}`;
+  const headline = `${offer}-ийг ${audience}-д хүргэх санаа`;
+  const caption = [
+    `${brandName}-ийн ${offer}-ийг онцлох постын draft:`,
+    "",
+    `${benefit}. ${tone} өнгө аястайгаар хэрэглэгчид шууд ойлгогдох мессеж өгнө.`,
+    "",
+    "CTA: Дэлгэрэнгүй мэдээлэл авах эсвэл захиалга өгөхөөр холбогдоорой.",
+  ].join("\n");
+  const imagePrompt = [
+    `${brandName} brand ${input.type.toLowerCase()} visual.`,
+    `Use ${colors}.`,
+    input.company.brandGuideline?.visualStyle || "Premium, clean, product-focused composition.",
+    input.templateName ? `Follow template style: ${input.templateName}.` : "Keep layout simple with strong headline space.",
+    `Subject: ${offer}.`,
+  ].join(" ");
+  const creativeDirection = [
+    `Admin prompt: ${input.prompt}`,
+    `Tone: ${tone}`,
+    `Audience: ${audience}`,
+    `Goal: ${benefit}`,
+  ].join("\n");
+  const chatReply = [
+    `За, ойлголоо. ${brandName}-ийн context дээр суурилаад эхний draft-ийг бэлдлээ.`,
+    "",
+    `Гарчиг: ${title}`,
+    "",
+    `Caption:`,
+    caption,
+    "",
+    `Image prompt: ${imagePrompt}`,
+    "",
+    "Дараагийн алхам: энэ draft-ийг Content queue дээрээс шалгаад, хэрэгтэй бол prompt-оо дахин явуулаад засварлуулж болно.",
+  ].join("\n");
+
+  return { title, headline, caption, imagePrompt, creativeDirection, chatReply };
+}
+
 async function triggerHermes(input: { companyId: string; contentItemId: string; prompt: string }) {
   const baseUrl = process.env.HERMES_POSTLY_PROMPT_URL || (process.env.HERMES_BASE_URL ? `${process.env.HERMES_BASE_URL.replace(/\/$/, "")}/webhooks/postly-prompt` : "");
   const secret = process.env.HERMES_AGENT_SECRET;
@@ -53,6 +118,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = await readJson(request);
   const prompt = asString(body.prompt);
   if (!prompt) return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+  const selectedContentType = contentType(body.contentType);
 
   const company = await prisma.companyProfile.findUnique({
     where: { id },
@@ -64,6 +130,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     },
   });
   if (!company) return NextResponse.json({ error: "Brand not found" }, { status: 404 });
+  const selectedTemplateId = asString(body.templateId);
+  const selectedTemplate = selectedTemplateId ? company.brandTemplates.find((template) => template.id === selectedTemplateId) : null;
+  const draft = buildHermesDraft({
+    prompt,
+    company,
+    type: selectedContentType,
+    templateName: selectedTemplate?.name,
+  });
 
   const now = new Date();
   const month = monthKey(now);
@@ -101,12 +175,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     data: {
       companyId: id,
       contentPlanId: plan.id,
-      templateId: asString(body.templateId),
-      contentType: contentType(body.contentType),
+      templateId: selectedTemplateId,
+      contentType: selectedContentType,
       category: "admin_chat",
-      title: `Hermes prompt: ${prompt.slice(0, 64)}${prompt.length > 64 ? "..." : ""}`,
-      creativeDirection: `Admin prompt for Hermes:\n${prompt}`,
-      status: PostlyContentStatus.PLANNED,
+      title: draft.title,
+      caption: draft.caption,
+      headline: draft.headline,
+      imagePrompt: draft.imagePrompt,
+      creativeDirection: draft.creativeDirection,
+      status: PostlyContentStatus.DRAFT_GENERATED,
     },
     include: { template: true },
   });
@@ -130,8 +207,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         companyId: id,
         contentItemId: item.id,
         sender: "hermes",
-        message: hermesTriggered ? "Prompt received. Hermes is generating this brand content." : "Prompt queued. Hermes cron will pick this up.",
-        status: hermesTriggered ? "sent" : "queued",
+        message: draft.chatReply,
+        status: "draft_generated",
         metadata: {
           contentType: item.contentType,
           templateId: item.templateId,
@@ -153,8 +230,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       contentItemId: item.id,
       agentName: "Postly Admin",
       action: "admin_chat.prompt",
-      status: hermesTriggered ? "sent" : "queued",
-      message: hermesTriggered ? "Admin prompt sent to Hermes" : "Admin prompt queued for Hermes cron",
+      status: "draft_generated",
+      message: "Hermes chat draft generated",
       rawPayload: {
         prompt,
         contentType: item.contentType,
@@ -176,8 +253,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     contentItemId: item.id,
     agentName: "Hermes",
     action: "postly.prompt.request",
-    status: hermesTriggered ? "sent" : "queued",
-    message: `Hermes prompt ${hermesTriggered ? "sent" : "queued"} for ${company.companyName ?? id}`,
+    status: "draft_generated",
+    message: `Hermes chat reply generated for ${company.companyName ?? id}`,
     rawPayload: { contentItemId: item.id },
   });
 
