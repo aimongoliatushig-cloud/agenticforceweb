@@ -16,6 +16,20 @@ export function isAdminEmail(email?: string | null) {
   return Boolean(email && getAdminEmails().includes(email.trim().toLowerCase()));
 }
 
+function sessionEmails(session: Awaited<ReturnType<typeof auth>>) {
+  const claims = session.sessionClaims as Record<string, unknown> | undefined;
+  const emailCandidates = [
+    claims?.email,
+    claims?.primary_email,
+    claims?.primaryEmail,
+    (claims?.primary_email_address as { email_address?: unknown } | undefined)?.email_address,
+  ];
+
+  return emailCandidates
+    .filter((email): email is string => typeof email === "string")
+    .map((email) => email.toLowerCase());
+}
+
 async function hasAdminBypassCookie() {
   const token = process.env.POSTLY_ADMIN_BYPASS_TOKEN?.trim();
   if (!token) return false;
@@ -61,6 +75,10 @@ export async function isAdminUser() {
       return false;
     }
 
+    if (sessionEmails(session).some((email) => isAdminEmail(email))) {
+      return true;
+    }
+
     const client = await clerkClient();
     const clerkUser = await client.users.getUser(session.userId);
     const emails = clerkUser.emailAddresses
@@ -71,7 +89,8 @@ export async function isAdminUser() {
       return true;
     }
   } catch {
-    return false;
+    // If Clerk's backend client is temporarily unavailable, continue to the
+    // local user-role fallback below instead of locking known admins out.
   }
 
   const appUser = await getAppUser();
