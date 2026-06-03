@@ -119,7 +119,7 @@ const emptyPlan = (): PlanForm => ({
   status: "ACTIVE",
 });
 
-const tabTargets = ["brand-profile", "brand-profile", "products-services", "templates", "hermes-chat", "plans", "content-plan"];
+const tabKeys = ["brand-profile", "brand-voice", "products-services", "templates", "hermes-knowledge", "plans", "content-queue"] as const;
 
 const copy = {
   en: {
@@ -352,6 +352,13 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
 
   const plannedCount = useMemo(() => items.filter((item) => item.status === "PLANNED").length, [items]);
   const draftCount = useMemo(() => items.filter((item) => item.status === "DRAFT_GENERATED" || item.status === "WAITING_APPROVAL").length, [items]);
+  const activeTabKey = tabKeys[activeTabIndex] || "brand-profile";
+  const workspaceLayoutClass =
+    activeTabKey === "templates"
+      ? "mt-6 grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]"
+      : activeTabKey === "hermes-knowledge" || activeTabKey === "content-queue"
+        ? "mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_430px]"
+        : "mt-6 grid gap-6";
 
   useEffect(() => {
     let mounted = true;
@@ -389,7 +396,6 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
 
   function activateTab(index: number) {
     setActiveTabIndex(index);
-    document.getElementById(tabTargets[index])?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function productPayload() {
@@ -693,8 +699,9 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
           </div>
         </div>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)_430px]">
-          <aside className="grid content-start gap-6">
+        <div className={workspaceLayoutClass}>
+          <aside className="contents">
+            {activeTabKey === "brand-profile" ? (
             <Panel id="brand-profile" title={c.brandInformation} icon={<Sparkles className="h-5 w-5" />}>
               <div className="flex items-center gap-4">
                 <div className="grid h-20 w-20 place-items-center rounded-full border border-white/10 bg-black text-2xl font-black text-amber-200">
@@ -709,14 +716,33 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                 <InfoRow label={c.phone} value={brand.phone || "-"} />
                 <InfoRow label={c.website} value={brand.website || "-"} />
                 <InfoRow label={c.address} value={brand.address || "-"} />
-                <InfoRow label={c.tone} value={brand.brandGuideline?.toneOfVoice || "-"} />
-                <div>
-                  <p className="text-xs uppercase tracking-[0.12em] text-white/35">{c.brandColors}</p>
-                  <ColorRow colors={brand.brandGuideline?.brandColors || []} />
+              </div>
+            </Panel>
+            ) : null}
+
+            {activeTabKey === "brand-voice" ? (
+            <Panel id="brand-voice" title={c.tabs[1]} icon={<Sparkles className="h-5 w-5" />}>
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="grid gap-4 text-sm">
+                  <InfoRow label={c.tone} value={brand.brandGuideline?.toneOfVoice || "-"} />
+                  <InfoRow label="Visual style" value={brand.brandGuideline?.visualStyle || "-"} />
+                  <InfoRow label="CTA style" value={brand.brandGuideline?.ctaStyle || "-"} />
+                  <InfoRow label="Language" value={brand.brandGuideline?.language || "-"} />
+                </div>
+                <div className="grid gap-4 text-sm">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.12em] text-white/35">{c.brandColors}</p>
+                    <ColorRow colors={brand.brandGuideline?.brandColors || []} />
+                  </div>
+                  <InfoRow label="Fonts" value={(brand.brandGuideline?.fonts || []).join(", ") || "-"} />
+                  <InfoRow label="Preferred words" value={(brand.brandGuideline?.preferredWords || []).join(", ") || "-"} />
+                  <InfoRow label="Forbidden words" value={(brand.brandGuideline?.forbiddenWords || []).join(", ") || "-"} />
                 </div>
               </div>
             </Panel>
+            ) : null}
 
+            {activeTabKey === "products-services" ? (
             <Panel id="products-services" title={c.productsServices} icon={<Store className="h-5 w-5" />}>
               <div className="grid gap-3">
                 <Field label={c.productName} value={productForm.name} onChange={(value) => updateProduct("name", value)} placeholder="Coffee subscription" />
@@ -771,7 +797,9 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                 )}
               </div>
             </Panel>
+            ) : null}
 
+            {activeTabKey === "templates" ? (
             <Panel id="templates" title={editingTemplateId ? c.editTemplate : c.addTemplate} icon={editingTemplateId ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}>
               <div className="grid gap-3">
                 <Field label={c.name} value={templateForm.name} onChange={(value) => updateTemplate("name", value)} placeholder="June promo poster" />
@@ -821,9 +849,11 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                 </div>
               </div>
             </Panel>
+            ) : null}
           </aside>
 
-          <section className="grid content-start gap-6">
+          <section className="contents">
+            {activeTabKey === "templates" ? (
             <Panel title={c.stats.templates} icon={<Image className="h-5 w-5" />}>
               <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                 {templates.length === 0 ? (
@@ -867,7 +897,9 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                 )}
               </div>
             </Panel>
+            ) : null}
 
+            {activeTabKey === "plans" ? (
             <Panel id="plans" title={c.contentPlans} icon={<CalendarDays className="h-5 w-5" />}>
               <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
                 <div className="grid gap-3">
@@ -932,8 +964,10 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                 )}
               </div>
             </Panel>
+            ) : null}
 
-            <Panel id="content-plan" title={c.contentQueue} icon={<FileText className="h-5 w-5" />}>
+            {activeTabKey === "content-queue" ? (
+            <Panel id="content-queue" title={c.contentQueue} icon={<FileText className="h-5 w-5" />}>
               <div className="grid gap-3">
                 {items.length === 0 ? (
                   <p className="text-sm text-white/50">{c.noContent}</p>
@@ -968,9 +1002,11 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                 )}
               </div>
             </Panel>
+            ) : null}
           </section>
 
-          <aside className="grid content-start gap-6">
+          <aside className="contents">
+            {activeTabKey === "hermes-knowledge" ? (
             <Panel id="hermes-chat" title={c.hermesChat} icon={<MessageSquareText className="h-5 w-5" />}>
               <div className="grid gap-4">
                 <div className="rounded-md border border-amber-300/20 bg-amber-300/10 p-4">
@@ -1049,7 +1085,9 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                 </div>
               </div>
             </Panel>
+            ) : null}
 
+            {activeTabKey === "content-queue" ? (
             <Panel title={c.recentActivity} icon={<Clock3 className="h-5 w-5" />}>
               <div className="grid gap-3">
                 {logs.length === 0 ? (
@@ -1064,6 +1102,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                 )}
               </div>
             </Panel>
+            ) : null}
           </aside>
         </div>
       </main>
