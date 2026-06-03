@@ -51,6 +51,38 @@ export async function getCurrentUserId() {
   }
 }
 
+export async function getCurrentUserEmails() {
+  try {
+    const session = await auth();
+    if (!session.userId) return [];
+
+    const emails = new Set(sessionEmails(session));
+
+    try {
+      const appUser = hasDatabaseUrl()
+        ? await prisma.user.findUnique({ where: { clerkUserId: session.userId }, select: { email: true } })
+        : null;
+      if (appUser?.email) emails.add(appUser.email.toLowerCase());
+    } catch {
+      // Best-effort enrichment; Clerk remains the source of truth below.
+    }
+
+    try {
+      const client = await clerkClient();
+      const clerkUser = await client.users.getUser(session.userId);
+      clerkUser.emailAddresses.forEach((item) => {
+        if (item.emailAddress) emails.add(item.emailAddress.toLowerCase());
+      });
+    } catch {
+      // Session and local user emails are enough for fallback matching.
+    }
+
+    return Array.from(emails).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 export async function getAppUser() {
   const clerkUserId = await getCurrentUserId();
   if (!clerkUserId || !hasDatabaseUrl()) {

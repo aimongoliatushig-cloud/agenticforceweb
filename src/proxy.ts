@@ -48,7 +48,7 @@ const clerkProxy = clerkMiddleware(async (auth, request) => {
   const { userId } = await auth();
 
   if (userId && localeHomeMatch) {
-    return NextResponse.redirect(new URL(`/${localeHomeMatch[1]}/dashboard`, request.url));
+    return NextResponse.redirect(new URL(`/${localeHomeMatch[1]}/dashboard/postly`, request.url));
   }
 
   if (isAdminRoute(request)) {
