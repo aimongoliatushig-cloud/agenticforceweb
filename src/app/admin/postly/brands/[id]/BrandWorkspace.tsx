@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
+  Bot,
   CheckCircle2,
   Clock3,
   ExternalLink,
@@ -261,6 +262,13 @@ function metadataImageUrl(metadata: unknown) {
   return typeof value === "string" && value.trim() ? value : null;
 }
 
+function chatTime(value: Date | string) {
+  return new Intl.DateTimeFormat("en", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; lang?: "en" | "mn" }) {
   const [templates, setTemplates] = useState<Template[]>(brand.brandTemplates);
   const [products, setProducts] = useState<ProductService[]>(brand.productsServicesPostly);
@@ -516,6 +524,7 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
   }
 
   async function sendPrompt() {
+    if (!prompt.trim() || sendingPrompt) return;
     setSendingPrompt(true);
     setMessage("");
     try {
@@ -801,12 +810,18 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
           </section>
 
           <aside className="grid content-start gap-6">
-            <Panel id="hermes-chat" title={c.hermesChat} icon={<MessageSquareText className="h-5 w-5" />}>
-              <div className="grid gap-4">
-                <div className="rounded-md border border-amber-300/20 bg-amber-300/10 p-4">
+            <section id="hermes-chat" className="overflow-hidden rounded-lg border border-white/10 bg-[#07110f] shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+              <div className="flex h-[680px] flex-col overflow-hidden bg-[linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.018)_1px,transparent_1px)] bg-[size:34px_34px]">
+                <div className="shrink-0 border-b border-white/10 bg-[#0f1f1b] p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-amber-100">
-                    <Sparkles className="h-4 w-4" />
-                    {c.hermesContext}
+                    <span className="relative grid h-10 w-10 place-items-center rounded-full bg-emerald-500 text-black">
+                      <Bot className="h-5 w-5" />
+                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#0f1f1b] bg-emerald-200" />
+                    </span>
+                    <span>
+                      <span className="block text-base font-black text-white">{c.hermesSender}</span>
+                      <span className="block text-xs text-emerald-100/65">online / {c.hermesContext}</span>
+                    </span>
                   </div>
                   <p className="mt-2 text-sm leading-6 text-white/65">
                     {brand.companyName || c.unnamed} · {brand.businessType || c.business} · {brand.brandGuideline?.toneOfVoice || c.toneMissing}
@@ -814,20 +829,43 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                   <ColorRow colors={brand.brandGuideline?.brandColors || []} />
                 </div>
 
+                <div className="order-3 mx-3 mt-3 flex gap-2 overflow-x-auto pb-1">
+                  {[
+                    "Create 5 Facebook post ideas",
+                    "Make a premium promo caption",
+                    "Generate image prompt ideas",
+                  ].map((quickPrompt) => (
+                    <button
+                      key={quickPrompt}
+                      type="button"
+                      onClick={() => setPrompt(quickPrompt)}
+                      className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-white/60 transition hover:border-emerald-200/30 hover:text-white"
+                    >
+                      {quickPrompt}
+                    </button>
+                  ))}
+                </div>
+
                 <textarea
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
-                  rows={7}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault();
+                      void sendPrompt();
+                    }
+                  }}
+                  rows={2}
                   placeholder={c.promptPlaceholder}
-                  className="w-full rounded-md border border-white/10 bg-black/45 p-4 text-sm leading-6 text-white outline-none transition placeholder:text-white/25 focus:border-amber-300/70"
+                  className="order-3 mx-3 mt-3 max-h-32 min-h-12 resize-none rounded-2xl border border-white/10 bg-black/55 px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/70"
                 />
 
-                <div className="grid gap-3">
+                <div className="order-4 grid shrink-0 gap-3 border-t border-white/10 bg-[#0f1f1b]/95 p-3">
                   <Select value={contentType} onChange={setContentType} options={["POSTER", "CAROUSEL", "REEL", "STORY"]} />
                   <select
                     value={selectedTemplateId}
                     onChange={(event) => setSelectedTemplateId(event.target.value)}
-                    className="h-11 rounded-md border border-white/10 bg-black/45 px-3 text-sm text-white outline-none transition focus:border-amber-300/70"
+                    className="h-11 rounded-md border border-white/10 bg-black/45 px-3 text-sm text-white outline-none transition focus:border-emerald-300/70"
                   >
                     <option value="">{c.noSpecificTemplate}</option>
                     {templates.map((template) => (
@@ -839,46 +877,77 @@ export default function BrandWorkspace({ brand, lang = "en" }: { brand: Brand; l
                   <button
                     onClick={sendPrompt}
                     disabled={sendingPrompt || !prompt.trim()}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-amber-300 px-4 text-sm font-bold text-black transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-emerald-400 px-4 text-sm font-bold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {sendingPrompt ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     {c.send}
                   </button>
                 </div>
 
-                <div className="rounded-md border border-white/10 bg-black/25 p-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/45">{c.chatHistory}</p>
-                  <div className="mt-3 grid max-h-80 gap-3 overflow-y-auto pr-1">
+                <div className="order-2 flex-1 overflow-hidden bg-black/10">
+                  <div className="flex items-center justify-between border-b border-white/10 bg-black/20 px-4 py-2">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/45">{c.chatHistory}</p>
+                    <span className="rounded-full bg-emerald-300/15 px-2 py-0.5 text-[11px] font-bold text-emerald-100">{contentType}</span>
+                  </div>
+                  <div className="grid h-full content-start gap-4 overflow-y-auto px-3 py-4 pr-2">
                     {chatMessages.length === 0 ? (
-                      <p className="text-sm text-white/45">{c.noChatHistory}</p>
+                      <div className="mx-auto mt-16 max-w-xs rounded-lg border border-dashed border-white/15 bg-black/35 p-5 text-center">
+                        <MessageSquareText className="mx-auto h-8 w-8 text-emerald-200" />
+                        <p className="mt-3 text-sm font-bold">{c.noChatHistory}</p>
+                        <p className="mt-2 text-xs leading-5 text-white/45">Start with a short prompt. Hermes will answer here like a live chat and create content in the queue.</p>
+                      </div>
                     ) : (
                       [...chatMessages].reverse().map((chat) => {
                         const isAdmin = chat.sender === "admin";
                         const imageUrl = metadataImageUrl(chat.metadata);
                         return (
-                          <div key={chat.id} className={`rounded-md border p-3 ${isAdmin ? "border-amber-300/20 bg-amber-300/10" : "border-white/10 bg-white/[0.04]"}`}>
-                            <div className="flex items-center justify-between gap-3">
-                              <p className={`text-xs font-bold uppercase tracking-[0.12em] ${isAdmin ? "text-amber-200" : "text-emerald-200"}`}>
-                                {isAdmin ? c.adminSender : c.hermesSender}
-                              </p>
-                              <p className="text-[11px] text-white/35">{new Date(chat.createdAt).toLocaleString()}</p>
-                            </div>
-                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-white/70">{chat.message}</p>
-                            {imageUrl ? (
-                              <div className="mt-3 overflow-hidden rounded-md border border-white/10 bg-black/35">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={imageUrl} alt={chat.status || c.hermesChat} className="aspect-square w-full object-cover" />
+                          <div key={chat.id} className={`flex items-end gap-2 ${isAdmin ? "justify-end" : "justify-start"}`}>
+                            {!isAdmin ? (
+                              <div className="mb-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-black">
+                                <Bot className="h-4 w-4" />
                               </div>
                             ) : null}
-                            {chat.status ? <p className="mt-2 text-[11px] uppercase tracking-[0.12em] text-white/35">{chat.status}</p> : null}
+                            <div className={`max-w-[86%] rounded-2xl px-4 py-3 shadow-sm sm:max-w-[78%] ${isAdmin ? "rounded-br-sm bg-violet-500 text-white" : "rounded-bl-sm border border-white/10 bg-[#17231f] text-white"}`}>
+                              <div className="mb-1 flex items-center justify-between gap-3">
+                                <p className={`text-[11px] font-bold uppercase tracking-[0.08em] ${isAdmin ? "text-white/70" : "text-emerald-100/75"}`}>
+                                  {isAdmin ? c.adminSender : c.hermesSender}
+                                </p>
+                                <p className="text-[11px] text-white/45">{chatTime(chat.createdAt)}</p>
+                              </div>
+                              <p className="whitespace-pre-wrap text-sm leading-6">{chat.message}</p>
+                              {imageUrl ? (
+                                <div className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-black/35">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={imageUrl} alt={chat.status || c.hermesChat} className="aspect-square w-full object-cover" />
+                                </div>
+                              ) : null}
+                              <div className="mt-2 flex items-center justify-end gap-2">
+                                {chat.status ? <span className="rounded-full bg-black/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-white/55">{chat.status}</span> : null}
+                                {isAdmin ? <span className="text-[11px] text-white/55">sent</span> : null}
+                              </div>
+                            </div>
                           </div>
                         );
                       })
                     )}
+                    {sendingPrompt ? (
+                      <div className="flex items-end gap-2">
+                        <div className="grid h-8 w-8 place-items-center rounded-full bg-emerald-500 text-black">
+                          <Bot className="h-4 w-4" />
+                        </div>
+                        <div className="rounded-2xl rounded-bl-sm border border-white/10 bg-[#17231f] px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-200" />
+                            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-200 [animation-delay:120ms]" />
+                            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-200 [animation-delay:240ms]" />
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>
-            </Panel>
+            </section>
 
             <Panel title={c.recentActivity} icon={<Clock3 className="h-5 w-5" />}>
               <div className="grid gap-3">
