@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { SignInButton, useUser } from "@clerk/nextjs";
 import {
   ArrowRight,
   Bell,
@@ -233,12 +234,64 @@ function DashboardWithClerk() {
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
   const name = user?.fullName || user?.firstName || email || (isLoaded ? "Хэрэглэгч" : "...");
 
+  if (!isLoaded) return <DashboardAccessState state="loading" />;
+  if (!isSignedIn) return <DashboardAccessState state="signed-out" />;
+
   return <DashboardShell isSignedIn={Boolean(isLoaded && isSignedIn)} userName={name} userEmail={email} userImage={user?.imageUrl} />;
 }
 
 export default function DashboardPage() {
   if (clerkEnabled) return <DashboardWithClerk />;
+  return <DashboardAccessState state="clerk-missing" />;
   return <DashboardShell isSignedIn={false} userName="Хэрэглэгч" userEmail="" />;
+}
+
+function DashboardAccessState({ state }: { state: "loading" | "signed-out" | "clerk-missing" }) {
+  const params = useParams<{ locale?: string }>();
+  const locale: Locale = normalizeLocale(params?.locale);
+  const isLoading = state === "loading";
+  const title =
+    state === "clerk-missing"
+      ? "Login тохиргоо идэвхгүй байна"
+      : state === "signed-out"
+        ? "Dashboard харахын тулд нэвтэрнэ үү"
+        : "Account шалгаж байна";
+  const body =
+    state === "clerk-missing"
+      ? "Clerk key тохируулагдаагүй үед demo dashboard харуулахгүй. NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY нэмээд server restart хийсний дараа account dashboard ажиллана."
+      : state === "signed-out"
+        ? "Та нэвтрээгүй байна. Нэвтэрсний дараа company profile, content plan, strategy хэсэг харагдана."
+        : "Түр хүлээнэ үү.";
+
+  return (
+    <main className="min-h-screen bg-[#030609] text-white">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_70%_18%,rgba(245,158,11,0.16),transparent_28%),radial-gradient(circle_at_25%_10%,rgba(139,92,246,0.14),transparent_24%)]" />
+      <section className="relative mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-4 text-center">
+        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100">
+          <ShieldAlert className="h-4 w-4" />
+          AgenticForce account
+        </div>
+        <h1 className="text-3xl font-black sm:text-5xl">{title}</h1>
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-white/60 sm:text-base">{body}</p>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          {state === "signed-out" ? (
+            <SignInButton mode="modal" forceRedirectUrl={`/${locale}/dashboard`}>
+              <button className="inline-flex h-11 items-center justify-center rounded-md bg-amber-400 px-5 text-sm font-black text-black transition hover:bg-amber-300">
+                Нэвтрэх
+              </button>
+            </SignInButton>
+          ) : null}
+          <Link href={`/${locale}`} className="inline-flex h-11 items-center justify-center rounded-md border border-white/10 px-5 text-sm font-bold text-white/75 transition hover:bg-white/10">
+            Нүүр рүү
+          </Link>
+          <Link href="/admin" className="inline-flex h-11 items-center justify-center rounded-md border border-violet-300/20 px-5 text-sm font-bold text-violet-100 transition hover:bg-violet-400/10">
+            Admin самбар
+          </Link>
+        </div>
+        {isLoading ? <LoaderCircle className="mt-8 h-6 w-6 animate-spin text-amber-200" /> : null}
+      </section>
+    </main>
+  );
 }
 
 function DashboardShell({ isSignedIn, userName, userEmail, userImage }: { isSignedIn: boolean; userName: string; userEmail: string; userImage?: string }) {

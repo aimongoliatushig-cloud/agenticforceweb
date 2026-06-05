@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { AgenticWorkflowBackground } from "@/components/AgenticWorkflowBackground";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { AcademyEnrollmentForm } from "@/components/AcademyEnrollmentForm";
-import { DashboardRedirect } from "@/components/DashboardRedirect";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { QuoteForm } from "@/components/QuoteForm";
 import { UserSync } from "@/components/UserSync";
@@ -44,7 +43,6 @@ export default async function LocaleHomePage({ params }: PageProps) {
     <div className="min-h-screen bg-black text-white">
       <AnalyticsTracker locale={locale} />
       {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? <UserSync locale={locale} /> : null}
-      {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? <DashboardRedirect locale={locale} /> : null}
       <Hero locale={locale} />
       <Services locale={locale} />
       <Academy locale={locale} />
