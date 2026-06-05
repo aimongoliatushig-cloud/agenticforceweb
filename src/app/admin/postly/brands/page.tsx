@@ -18,9 +18,11 @@ export default async function AdminPostlyBrandsPage({ searchParams }: { searchPa
   const currentLang = adminLang(lang);
   const brands = hasDatabaseUrl()
     ? (await prisma.companyProfile.findMany({
-        orderBy: [{ companyName: "asc" }, { createdAt: "desc" }],
+        orderBy: [{ createdAt: "desc" }, { companyName: "asc" }],
         include: {
           brandGuideline: true,
+          makeIntegration: { select: { status: true } },
+          socialAccounts: { select: { status: true } },
           _count: {
             select: {
               brandTemplates: true,
@@ -52,6 +54,8 @@ export default async function AdminPostlyBrandsPage({ searchParams }: { searchPa
               language: brand.brandGuideline.language,
             }
           : null,
+        makeIntegration: brand.makeIntegration,
+        socialAccounts: brand.socialAccounts,
         _count: brand._count,
       }))
     : [];

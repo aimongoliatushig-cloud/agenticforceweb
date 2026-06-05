@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Grid2X2, ListFilter, MessageCircle, MoreHorizontal, Pencil, Plus, Search, Store, Trash2, X } from "lucide-react";
+import { CalendarDays, Grid2X2, ListFilter, MessageCircle, Pencil, Plus, Search, Sparkles, Store, Trash2, X } from "lucide-react";
 
 type Brand = {
   id: string;
@@ -24,6 +24,8 @@ type Brand = {
     visualStyle: string | null;
     language: string;
   } | null;
+  makeIntegration: { status: string } | null;
+  socialAccounts: { status: string }[];
   _count: {
     brandTemplates: number;
     contentItems: number;
@@ -87,7 +89,7 @@ const copy = {
       phone: "Phone",
       email: "Email",
       website: "Website",
-      logoUrl: "Logo URL",
+      logoUrl: "Logo file",
       facebookUrl: "Facebook",
       instagramUrl: "Instagram",
       tiktokUrl: "TikTok",
@@ -133,7 +135,7 @@ const copy = {
       phone: "Утас",
       email: "Имэйл",
       website: "Website",
-      logoUrl: "Logo URL",
+      logoUrl: "Logo file",
       facebookUrl: "Facebook",
       instagramUrl: "Instagram",
       tiktokUrl: "TikTok",
@@ -180,20 +182,73 @@ function formFromBrand(brand: Brand): FormState {
   };
 }
 
+function readinessScore(brand: Brand) {
+  const checks = [
+    Boolean(brand.companyName),
+    Boolean(brand.businessType || brand.activityDirection),
+    Boolean(brand.brandGuideline?.toneOfVoice),
+    Boolean(brand.brandGuideline?.brandColors.length),
+    brand._count.productsServicesPostly > 0,
+    brand._count.brandTemplates > 0,
+    brand.socialAccounts.some((account) => account.status === "CONNECTED"),
+    brand.makeIntegration?.status === "active",
+  ];
+  const completed = checks.filter(Boolean).length;
+  return {
+    completed,
+    total: checks.length,
+    percent: Math.round((completed / checks.length) * 100),
+  };
+}
+
+function readinessTone(percent: number) {
+  if (percent >= 75) return "border-emerald-300/25 bg-emerald-300/10 text-emerald-200";
+  if (percent >= 45) return "border-amber-300/25 bg-amber-300/10 text-amber-200";
+  return "border-red-300/25 bg-red-300/10 text-red-200";
+}
+
 export default function BrandsManager({ initialBrands, lang = "en" }: { initialBrands: Brand[]; lang?: "en" | "mn" }) {
   const [brands, setBrands] = useState(initialBrands);
   const [query, setQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const c = copy[lang];
-  const withLang = (href: string) => `${href}?lang=${lang}`;
+  const withLang = (href: string) => `${href}${href.includes("?") ? "&" : "?"}lang=${lang}`;
   const viewLabels = lang === "mn"
     ? { grid: "Grid харагдац", list: "List харагдац" }
     : { grid: "Grid view", list: "List view" };
+
+  async function refreshBrands() {
+    try {
+      const response = await fetch("/api/admin/postly/brands", { cache: "no-store" });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && Array.isArray(data.brands)) {
+        setBrands(data.brands);
+      }
+    } catch {
+      // Keep the server-rendered list if a background refresh fails.
+    }
+  }
+
+  useEffect(() => {
+    refreshBrands();
+
+    function handleFocus() {
+      refreshBrands();
+    }
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, []);
 
   const filteredBrands = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -212,6 +267,7 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
   function openCreate() {
     setEditingBrand(null);
     setForm(emptyForm);
+    setLogoFile(null);
     setFormOpen(true);
     setMessage("");
   }
@@ -219,6 +275,7 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
   function openEdit(brand: Brand) {
     setEditingBrand(brand);
     setForm(formFromBrand(brand));
+    setLogoFile(null);
     setFormOpen(true);
     setMessage("");
   }
@@ -229,10 +286,15 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
 
     try {
       const url = editingBrand ? `/api/admin/postly/brands/${editingBrand.id}` : "/api/admin/postly/brands";
+      const body = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        body.append(key, value);
+      });
+      if (logoFile) body.append("logoFile", logoFile);
+
       const response = await fetch(url, {
         method: editingBrand ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body,
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || c.saveFailed);
@@ -242,6 +304,7 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
       );
       setFormOpen(false);
       setForm(emptyForm);
+      setLogoFile(null);
       setEditingBrand(null);
       setMessage(editingBrand ? c.savedUpdate : c.savedCreate);
     } catch (error) {
@@ -332,17 +395,28 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
             {c.empty}
           </div>
         ) : (
-          filteredBrands.map((brand) => (
+          filteredBrands.map((brand) => {
+            const readiness = readinessScore(brand);
+            return (
             <article
               key={brand.id}
-              className={`overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:border-amber-300/40 hover:bg-white/[0.06] ${
+              className={`overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:border-violet-300/40 hover:bg-white/[0.06] ${
                 viewMode === "list" ? "lg:grid lg:grid-cols-[1fr_260px]" : ""
               }`}
             >
               <Link href={withLang(`/admin/postly/brands/${brand.id}`)} className="block p-5">
                 <div>
-                  <div className="grid h-16 w-16 place-items-center rounded-full border border-white/10 bg-black text-xl font-black text-amber-200">
-                    {(brand.companyName || "P").slice(0, 1)}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="grid h-16 w-16 place-items-center rounded-full border border-white/10 bg-black text-xl font-black text-violet-200">
+                      {brand.logoUrl ? (
+                        <img src={brand.logoUrl} alt={`${brand.companyName || c.unnamed} logo`} className="h-full w-full rounded-full object-cover" />
+                      ) : (
+                        (brand.companyName || "P").slice(0, 1)
+                      )}
+                    </div>
+                    <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${readinessTone(readiness.percent)}`}>
+                      {readiness.percent}%
+                    </span>
                   </div>
                   <h2 className="mt-4 text-lg font-bold">{brand.companyName || c.unnamed}</h2>
                   <p className="mt-1 text-sm text-white/50">{brand.businessType || c.brandFallback}</p>
@@ -353,13 +427,18 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
                 <div className="mt-4 space-y-2 text-xs text-white/55">
                   <p>{c.target}: {brand.description?.slice(0, 58) || c.targetMissing}</p>
                   <p>
-                    {c.hermes}: <span className="font-semibold text-emerald-300">{c.active}</span>
+                    {c.hermes}: <span className="font-semibold text-emerald-300">{readiness.percent >= 70 ? c.active : `${readiness.completed}/${readiness.total}`}</span>
                   </p>
-                  <p>{c.templates}: {brand._count.brandTemplates}</p>
+                  <p>{c.templates}: {brand._count.brandTemplates} · Products: {brand._count.productsServicesPostly} · Content: {brand._count.contentItems}</p>
+                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full rounded-full bg-violet-400" style={{ width: `${readiness.percent}%` }} />
+                  </div>
                 </div>
               </Link>
-              <div className={`grid grid-cols-5 border-t border-white/10 ${viewMode === "list" ? "lg:border-l lg:border-t-0" : ""}`}>
+              <div className={`grid grid-cols-6 border-t border-white/10 ${viewMode === "list" ? "lg:border-l lg:border-t-0" : ""}`}>
                 <IconLink href={withLang(`/admin/postly/brands/${brand.id}`)} label="Chat" icon={<MessageCircle className="h-4 w-4" />} />
+                <IconLink href={withLang(`/admin/postly/content-studio?brandId=${brand.id}`)} label="Studio" icon={<Sparkles className="h-4 w-4" />} />
+                <IconLink href={withLang(`/admin/postly/calendar`)} label="Calendar" icon={<CalendarDays className="h-4 w-4" />} />
                 <IconLink href={withLang(`/admin/postly/brands/${brand.id}`)} label="Templates" icon={<Store className="h-4 w-4" />} />
                 <button onClick={() => openEdit(brand)} className="flex h-11 items-center justify-center border-r border-white/10 text-amber-200 hover:bg-white/5">
                   <Pencil className="h-4 w-4" />
@@ -367,10 +446,10 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
                 <button onClick={() => deleteBrand(brand)} className="flex h-11 items-center justify-center border-r border-white/10 text-red-300 hover:bg-red-400/10">
                   <Trash2 className="h-4 w-4" />
                 </button>
-                <IconLink href={withLang(`/admin/postly/brands/${brand.id}`)} label="More" icon={<MoreHorizontal className="h-4 w-4" />} />
               </div>
             </article>
-          ))
+            );
+          })
         )}
         <button
           type="button"
@@ -408,7 +487,22 @@ export default function BrandsManager({ initialBrands, lang = "en" }: { initialB
               <Field label={c.fields.phone} value={form.phone} onChange={(value) => update("phone", value)} placeholder="+976..." />
               <Field label={c.fields.email} value={form.email} onChange={(value) => update("email", value)} placeholder="hello@brand.mn" />
               <Field label={c.fields.website} value={form.website} onChange={(value) => update("website", value)} placeholder="https://..." />
-              <Field label={c.fields.logoUrl} value={form.logoUrl} onChange={(value) => update("logoUrl", value)} placeholder="https://..." />
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/45">{c.fields.logoUrl}</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)}
+                  className="mt-2 w-full rounded-md border border-white/10 bg-black/45 px-3 py-2 text-sm text-white file:mr-3 file:rounded-md file:border-0 file:bg-amber-300 file:px-3 file:py-2 file:text-sm file:font-bold file:text-black"
+                />
+                <span className="mt-2 block text-xs text-white/35">{logoFile ? logoFile.name : "PNG, JPG, WEBP, SVG"}</span>
+                {form.logoUrl && !logoFile ? (
+                  <span className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 px-2.5 py-1 text-xs text-white/45">
+                    <span className="h-4 w-4 rounded-full border border-white/10 bg-cover bg-center" style={{ backgroundImage: `url(${form.logoUrl})` }} />
+                    Current logo
+                  </span>
+                ) : null}
+              </label>
               <Field label={c.fields.facebookUrl} value={form.facebookUrl} onChange={(value) => update("facebookUrl", value)} placeholder="https://facebook.com/..." />
               <Field label={c.fields.instagramUrl} value={form.instagramUrl} onChange={(value) => update("instagramUrl", value)} placeholder="https://instagram.com/..." />
               <Field label={c.fields.tiktokUrl} value={form.tiktokUrl} onChange={(value) => update("tiktokUrl", value)} placeholder="https://tiktok.com/..." />

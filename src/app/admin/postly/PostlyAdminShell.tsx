@@ -2,27 +2,58 @@ import Link from "next/link";
 import {
   CalendarDays,
   CheckSquare,
+  ClipboardList,
   FileCheck2,
   Gauge,
   Layers3,
+  LayoutDashboard,
   MessageSquareText,
+  PlugZap,
+  Rocket,
   Settings,
   Store,
   UserRound,
+  WandSparkles,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { UserSync } from "@/components/UserSync";
+
+type NavKey =
+  | "dashboard"
+  | "brands"
+  | "chat"
+  | "studio"
+  | "calendar"
+  | "approval"
+  | "templates"
+  | "plans"
+  | "queue"
+  | "publishing"
+  | "integrations"
+  | "logs"
+  | "settings";
 
 const navItems = [
   { key: "dashboard", labelEn: "Dashboard", labelMn: "Хянах самбар", href: "/admin", icon: Gauge },
   { key: "brands", labelEn: "Brands", labelMn: "Брэндүүд", href: "/admin/postly/brands", icon: Store },
-  { key: "templates", labelEn: "Templates", labelMn: "Темплейтүүд", href: "/admin/postly/templates", icon: Layers3 },
-  { key: "chat", labelEn: "Hermes Chat", labelMn: "Hermes чат", href: "/admin/postly/brands", icon: MessageSquareText },
-  { key: "calendar", labelEn: "Content Calendar", labelMn: "Контент календарь", href: "/admin/postly/calendar", icon: CalendarDays },
-  { key: "approval", labelEn: "Approval", labelMn: "Зөвшөөрөл", href: "/admin/postly/approval", icon: CheckSquare },
-  { key: "logs", labelEn: "Published Logs", labelMn: "Нийтэлсэн лог", href: "/admin/postly/logs", icon: FileCheck2 },
+  { key: "chat", labelEn: "Brand Chat", labelMn: "Брэнд чат", href: "/admin/postly/brands", icon: MessageSquareText },
+  { key: "studio", labelEn: "Content Studio", labelMn: "Контент студи", href: "/admin/postly/content-studio", icon: WandSparkles },
+  { key: "calendar", labelEn: "Calendar", labelMn: "Календарь", href: "/admin/postly/calendar", icon: CalendarDays },
+  { key: "approval", labelEn: "Approvals", labelMn: "Зөвшөөрөл", href: "/admin/postly/approval", icon: CheckSquare },
+  { key: "templates", labelEn: "Templates", labelMn: "Темплейт", href: "/admin/postly/templates", icon: Layers3 },
+  { key: "plans", labelEn: "Plans", labelMn: "Төлөвлөгөө", href: "/admin/postly/brands", icon: LayoutDashboard },
+  { key: "queue", labelEn: "Content Queue", labelMn: "Контент queue", href: "/admin/postly/approval", icon: ClipboardList },
+  { key: "publishing", labelEn: "Publishing", labelMn: "Нийтлэлт", href: "/admin/postly/logs", icon: Rocket },
+  { key: "integrations", labelEn: "Integrations", labelMn: "Холболтууд", href: "/admin/postly/integrations", icon: PlugZap },
+  { key: "logs", labelEn: "System Logs", labelMn: "Систем лог", href: "/admin/postly/logs", icon: FileCheck2 },
   { key: "settings", labelEn: "Settings", labelMn: "Тохиргоо", href: "/admin/postly/integrations", icon: Settings },
-];
+] satisfies {
+  key: NavKey;
+  labelEn: string;
+  labelMn: string;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+}[];
 
 export default function PostlyAdminShell({
   active,
@@ -30,7 +61,7 @@ export default function PostlyAdminShell({
   currentPath,
   children,
 }: {
-  active: "dashboard" | "brands" | "templates" | "chat" | "calendar" | "approval" | "logs" | "settings";
+  active: NavKey;
   lang?: "en" | "mn";
   currentPath?: string;
   children: ReactNode;
@@ -44,11 +75,14 @@ export default function PostlyAdminShell({
       {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? <UserSync locale={lang} /> : null}
       <aside className="fixed left-0 top-0 z-30 hidden h-screen w-64 border-r border-white/10 bg-zinc-950/95 px-4 py-5 shadow-2xl shadow-black/40 lg:block">
         <Link href={withLang("/admin")} className="flex items-center gap-3 px-2">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-amber-300 text-sm font-black text-black">P</span>
-          <span className="text-lg font-black tracking-tight">Postly.mn</span>
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-violet-500 text-sm font-black text-white">A</span>
+          <span>
+            <span className="block text-lg font-black tracking-tight">AgenticForce</span>
+            <span className="block text-[11px] text-white/40">AI agent orchestration</span>
+          </span>
         </Link>
 
-        <nav className="mt-8 space-y-2">
+        <nav className="mt-8 space-y-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const selected = item.key === active;
@@ -56,8 +90,8 @@ export default function PostlyAdminShell({
               <Link
                 key={item.key}
                 href={withLang(item.href)}
-                className={`flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition ${
-                  selected ? "bg-amber-300 text-black" : "text-white/65 hover:bg-white/10 hover:text-white"
+                className={`flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition ${
+                  selected ? "bg-violet-500 text-white" : "text-white/65 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -83,12 +117,12 @@ export default function PostlyAdminShell({
 
         <div className="absolute bottom-5 left-4 right-4 rounded-lg border border-white/10 bg-white/[0.04] p-3">
           <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-amber-300/20 text-amber-200">
+            <div className="grid h-9 w-9 place-items-center rounded-full bg-violet-500/20 text-violet-200">
               <UserRound className="h-4 w-4" />
             </div>
             <div>
               <p className="text-sm font-semibold">Postly Admin</p>
-              <p className="text-xs text-white/45">Admin</p>
+              <p className="text-xs text-white/45">Workflow operator</p>
             </div>
           </div>
         </div>
@@ -98,8 +132,8 @@ export default function PostlyAdminShell({
         <div className="sticky top-0 z-20 border-b border-white/10 bg-black/85 px-4 py-3 backdrop-blur lg:hidden">
           <div className="flex items-center justify-between">
             <Link href={withLang("/admin")} className="flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-300 text-xs font-black text-black">P</span>
-              <span className="font-black">Postly.mn</span>
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-violet-500 text-xs font-black text-white">A</span>
+              <span className="font-black">AgenticForce</span>
             </Link>
             <div className="grid grid-cols-2 gap-1 rounded-md border border-white/10 bg-white/[0.04] p-1">
               {(["mn", "en"] as const).map((item) => (
@@ -124,7 +158,7 @@ export default function PostlyAdminShell({
                   key={item.key}
                   href={withLang(item.href)}
                   className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-md border px-3 text-xs font-semibold transition ${
-                    selected ? "border-amber-300/45 bg-amber-300 text-black" : "border-white/10 bg-white/[0.04] text-white/65 hover:bg-white/10 hover:text-white"
+                    selected ? "border-violet-400 bg-violet-500 text-white" : "border-white/10 bg-white/[0.04] text-white/65 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />

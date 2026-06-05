@@ -1,5 +1,15 @@
-import { PrismaClient } from "@prisma/client";
+import nextEnv from "@next/env";
 
+const { loadEnvConfig } = nextEnv;
+loadEnvConfig(process.cwd());
+if (!process.env.SUPABASE_DATABASE_URL && process.env.DATABASE_URL) {
+  process.env.SUPABASE_DATABASE_URL = process.env.DATABASE_URL;
+}
+if (!process.env.SUPABASE_DATABASE_URL) {
+  throw new Error("SUPABASE_DATABASE_URL is missing. Add it to .env.local before seeding Postly.");
+}
+
+const { PrismaClient } = await import("@prisma/client");
 const prisma = new PrismaClient();
 
 async function main() {

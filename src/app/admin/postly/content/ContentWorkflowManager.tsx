@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, Clock3, LoaderCircle, Send, XCircle } from "lucide-react";
+import { CheckCircle2, Clock3, LoaderCircle, Send, XCircle } from "lucide-react";
 
 type Locale = "en" | "mn";
 type Mode = "approval" | "calendar" | "logs";

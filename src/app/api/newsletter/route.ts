@@ -3,18 +3,23 @@ import { z } from "zod";
 import { getAppUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import { normalizeLocale } from "@/lib/i18n";
+import { publicFormGuard } from "@/lib/public-form-guard";
 
 const schema = z.object({
   email: z.string().email(),
   consent: z.boolean(),
   locale: z.string().optional(),
+  website: z.string().optional().nullable(),
 });
 
 export async function POST(request: Request) {
-  const input = schema.safeParse(await request.json().catch(() => null));
+  const body = await request.json().catch(() => null);
+  const input = schema.safeParse(body);
   if (!input.success || !input.data.consent) {
     return NextResponse.json({ error: "Invalid newsletter request" }, { status: 400 });
   }
+  const denied = publicFormGuard(request, body || {});
+  if (denied) return denied;
 
   if (!hasDatabaseUrl()) {
     return NextResponse.json({ ok: true, stored: false });

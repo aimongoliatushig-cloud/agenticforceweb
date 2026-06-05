@@ -1,4 +1,33 @@
 
+function supabaseHostname() {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const remotePatterns = [
+  {
+    protocol: 'https',
+    hostname: 'cdn.simpleicons.org',
+  },
+  {
+    protocol: 'https',
+    hostname: 'images.unsplash.com',
+  },
+];
+
+const supabaseHost = supabaseHostname();
+if (supabaseHost) {
+  remotePatterns.push({
+    protocol: 'https',
+    hostname: supabaseHost,
+  });
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -11,24 +40,7 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'cdn.simpleicons.org',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-      {
-        protocol: 'http',
-        hostname: '**',
-      },
-    ],
+    remotePatterns,
   },
   // Add compiler options for production
   compiler: {

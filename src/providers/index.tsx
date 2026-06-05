@@ -6,14 +6,14 @@ import {
   ThemeProvider as NextThemesProvider,
   type ThemeProviderProps,
 } from "next-themes";
+import { isClerkConfigured } from "@/lib/clerk-config";
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
-  return (
-    <ClerkProvider>
+  const content = (
     <ThemeProvider
       attribute="class"
       defaultTheme="dark"
@@ -22,6 +22,15 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     >
       {children}
     </ThemeProvider>
+  );
+
+  if (!isClerkConfigured()) {
+    return content;
+  }
+
+  return (
+    <ClerkProvider>
+      {content}
     </ClerkProvider>
   );
 }

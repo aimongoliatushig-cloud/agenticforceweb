@@ -3,6 +3,7 @@ import { z } from "zod";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import { normalizeDemoLeadToHermes, sendLeadToHermes } from "@/lib/hermes-leads";
 import { normalizeLocale } from "@/lib/i18n";
+import { publicFormGuard } from "@/lib/public-form-guard";
 
 export const runtime = "nodejs";
 
@@ -15,14 +16,18 @@ const schema = z.object({
   locale: z.string().optional(),
   path: z.string().max(1000).optional().nullable(),
   referrer: z.string().max(1000).optional().nullable(),
+  website: z.string().optional().nullable(),
 });
 
 export async function POST(request: Request) {
-  const input = schema.safeParse(await request.json().catch(() => null));
+  const body = await request.json().catch(() => null);
+  const input = schema.safeParse(body);
 
   if (!input.success) {
     return NextResponse.json({ error: "Invalid demo lead" }, { status: 400 });
   }
+  const denied = publicFormGuard(request, body || {});
+  if (denied) return denied;
 
   if (!hasDatabaseUrl()) {
     return NextResponse.json({ error: "Database is not configured" }, { status: 503 });

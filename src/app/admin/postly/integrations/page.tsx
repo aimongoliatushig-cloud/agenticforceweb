@@ -12,7 +12,7 @@ export default async function AdminPostlyIntegrationsPage({ searchParams }: { se
   const currentLang = adminLang(lang);
 
   return (
-    <PostlyAdminShell active="settings" lang={currentLang} currentPath="/admin/postly/integrations">
+    <PostlyAdminShell active="integrations" lang={currentLang} currentPath="/admin/postly/integrations">
       <IntegrationsManager lang={currentLang} />
     </PostlyAdminShell>
   );

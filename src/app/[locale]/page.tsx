@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AgenticWorkflowBackground } from "@/components/AgenticWorkflowBackground";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { AcademyEnrollmentForm } from "@/components/AcademyEnrollmentForm";
+import { DashboardRedirect } from "@/components/DashboardRedirect";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { QuoteForm } from "@/components/QuoteForm";
 import { UserSync } from "@/components/UserSync";
@@ -43,6 +44,7 @@ export default async function LocaleHomePage({ params }: PageProps) {
     <div className="min-h-screen bg-black text-white">
       <AnalyticsTracker locale={locale} />
       {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? <UserSync locale={locale} /> : null}
+      {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? <DashboardRedirect locale={locale} /> : null}
       <Hero locale={locale} />
       <Services locale={locale} />
       <Academy locale={locale} />
@@ -105,7 +107,7 @@ function Hero({ locale }: { locale: Locale }) {
             <ShieldCheck className="h-4 w-4 text-amber-300" />
             {copy.badge}
           </div>
-          <h1 className="max-w-4xl text-5xl font-black leading-[0.95] tracking-normal sm:text-7xl lg:text-8xl">
+          <h1 className="max-w-full break-words text-4xl font-black leading-tight tracking-normal sm:max-w-4xl sm:text-7xl sm:leading-[0.95] lg:text-8xl">
             {copy.title}
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-white/68">{copy.description}</p>
