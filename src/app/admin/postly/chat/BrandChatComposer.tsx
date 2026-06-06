@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LoaderCircle, Send, Sparkles } from "lucide-react";
 
 type Template = { id: string; name: string };
@@ -26,12 +26,27 @@ const quickPrompts = {
   ],
 };
 
+function moveConversationToLatest() {
+  const composer = document.getElementById("composer");
+  const conversation = composer?.previousElementSibling;
+  if (!(conversation instanceof HTMLElement)) return;
+
+  conversation.style.overflowY = "auto";
+  conversation.style.overscrollBehavior = "contain";
+  conversation.scrollTop = conversation.scrollHeight;
+}
+
 export default function BrandChatComposer({ brandId, templates, lang = "en" }: BrandChatComposerProps) {
   const [prompt, setPrompt] = useState("");
   const [contentType, setContentType] = useState("POSTER");
   const [templateId, setTemplateId] = useState("");
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    const id = window.setTimeout(moveConversationToLatest, 0);
+    return () => window.clearTimeout(id);
+  }, [brandId]);
 
   const copy = lang === "mn"
     ? {
@@ -65,6 +80,7 @@ export default function BrandChatComposer({ brandId, templates, lang = "en" }: B
       if (!response.ok) throw new Error(data.error || copy.failed);
       setPrompt("");
       setNotice(copy.queued);
+      window.setTimeout(moveConversationToLatest, 0);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : copy.failed);
     } finally {
