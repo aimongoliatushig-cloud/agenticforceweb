@@ -4,6 +4,7 @@ import { Bot, Clock3, MessageSquareText, Package, Sparkles } from "lucide-react"
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
 import PostlyAdminShell from "../PostlyAdminShell";
+import BrandChatComposer from "./BrandChatComposer";
 
 export const dynamic = "force-dynamic";
 
@@ -45,21 +46,23 @@ export default async function AdminPostlyChatPage({
         title: "Брэнд AI чат",
         subtitle: "Брэнд бүрийн Hermes яриа, context, output-ийг messenger шиг нэг дор харна.",
         noBrand: "Брэнд одоогоор алга.",
-        noMessages: "Энэ брэнд дээр чат одоогоор алга. Брэнд workspace рүү орж эхний prompt өг.",
-        open: "Чатлаж prompt өгөх",
+        noMessages: "Энэ брэнд дээр чат одоогоор алга. Доорх хэсэгт prompt бичээд Hermes-ээр эхний draft үүсгэ.",
+        open: "Workspace",
         context: "Брэнд context",
         recent: "Сүүлийн output",
         brandList: "Брэндүүд",
+        createContent: "Контент үүсгэх",
       }
     : {
         title: "Brand AI Chat",
         subtitle: "A messenger-style view of each brand's Hermes conversation, context, and outputs.",
         noBrand: "No brands yet.",
-        noMessages: "No conversation yet. Open the brand workspace and send the first prompt.",
-        open: "Open chat composer",
+        noMessages: "No conversation yet. Write a prompt below and let Hermes create the first draft.",
+        open: "Workspace",
         context: "Brand context",
         recent: "Recent outputs",
         brandList: "Brands",
+        createContent: "Create content",
       };
 
   const brands = hasDatabaseUrl()
@@ -95,12 +98,19 @@ export default async function AdminPostlyChatPage({
   return (
     <PostlyAdminShell active="chat" lang={currentLang} currentPath="/admin/postly/chat">
       <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-5">
-          <div className="inline-flex items-center gap-2 rounded-full border border-violet-300/20 bg-violet-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-violet-100">
-            <MessageSquareText className="h-3.5 w-3.5" /> Hermes Messenger
+        <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-300/20 bg-violet-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-violet-100">
+              <MessageSquareText className="h-3.5 w-3.5" /> Hermes Messenger
+            </div>
+            <h1 className="mt-3 text-3xl font-black sm:text-4xl">{c.title}</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/52">{c.subtitle}</p>
           </div>
-          <h1 className="mt-3 text-3xl font-black sm:text-4xl">{c.title}</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-white/52">{c.subtitle}</p>
+          {selectedBrand ? (
+            <Link href={`/admin/postly/chat?lang=${currentLang}&brandId=${selectedBrand.id}#composer`} className="inline-flex h-11 items-center justify-center rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 text-sm font-black text-white shadow-lg shadow-violet-500/20">
+              {c.createContent}
+            </Link>
+          ) : null}
         </div>
 
         <div className="grid min-h-[720px] gap-4 xl:grid-cols-[320px_minmax(0,1fr)_340px]">
@@ -155,12 +165,14 @@ export default async function AdminPostlyChatPage({
                         <p className="text-xs text-white/42">{selectedBrand.businessType || selectedBrand.description || "Hermes chat"}</p>
                       </div>
                     </div>
-                    <Link
-                      href={`/admin/postly/brands/${selectedBrand.id}?lang=${currentLang}`}
-                      className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 text-xs font-black text-black transition hover:bg-violet-100"
-                    >
-                      {c.open}
-                    </Link>
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/admin/postly/brands/${selectedBrand.id}?lang=${currentLang}`}
+                        className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 text-xs font-black text-black transition hover:bg-violet-100"
+                      >
+                        {c.open}
+                      </Link>
+                    </div>
                   </div>
                 </div>
 
@@ -196,6 +208,14 @@ export default async function AdminPostlyChatPage({
                       );
                     })
                   )}
+                </div>
+
+                <div id="composer">
+                  <BrandChatComposer
+                    brandId={selectedBrand.id}
+                    templates={selectedBrand.brandTemplates.map((template) => ({ id: template.id, name: template.name }))}
+                    lang={currentLang}
+                  />
                 </div>
               </>
             ) : (
