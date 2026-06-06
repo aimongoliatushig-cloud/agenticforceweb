@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { PostlyContentStatus } from "@prisma/client";
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
-import ContentWorkflowManager from "../content/ContentWorkflowManager";
 import PostlyAdminShell from "../PostlyAdminShell";
+import PublishedLogsDashboard from "./PublishedLogsDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +30,7 @@ export default async function AdminPostlyLogsPage({ searchParams }: { searchPara
         include: {
           company: true,
           template: true,
+          assets: { orderBy: { createdAt: "desc" }, take: 1 },
           approvalRequests: { orderBy: { createdAt: "desc" }, take: 3 },
           postingLogs: { orderBy: { createdAt: "desc" }, take: 5 },
         },
@@ -38,7 +39,7 @@ export default async function AdminPostlyLogsPage({ searchParams }: { searchPara
 
   return (
     <PostlyAdminShell active="logs" lang={currentLang} currentPath="/admin/postly/logs">
-      <ContentWorkflowManager initialItems={JSON.parse(JSON.stringify(items))} mode="logs" lang={currentLang} />
+      <PublishedLogsDashboard items={JSON.parse(JSON.stringify(items))} lang={currentLang} />
     </PostlyAdminShell>
   );
 }
