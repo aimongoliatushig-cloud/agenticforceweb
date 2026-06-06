@@ -103,49 +103,68 @@ const dashboardCopy = {
   },
 };
 
-async function getAdminData() {
-  const empty = {
-    users: 0,
-    subscribers: 0,
-    quotes: 0,
-    articleDrafts: 0,
-    pageViews: 0,
-    newsletterClicks: 0,
-    brands: 0,
-    plannedContent: 0,
-    waitingApproval: 0,
-    failedContent: 0,
-    postedContent: 0,
-    activePlans: 0,
-    agentLogs: 0,
-    latestQuotes: [] as {
-      id: string;
-      name: string;
-      email: string;
-      serviceInterest: string;
-      status: string;
-      createdAt: Date;
-    }[],
-    latestContent: [] as {
-      id: string;
-      title: string | null;
-      contentType: string;
-      status: string;
-      updatedAt: Date;
-      company: { companyName: string | null };
-      template: { name: string } | null;
-    }[],
-    latestLogs: [] as {
-      id: string;
-      agentName: string;
-      action: string;
-      status: string;
-      message: string | null;
-      createdAt: Date;
-    }[],
-  };
+type AdminData = {
+  users: number;
+  subscribers: number;
+  quotes: number;
+  articleDrafts: number;
+  pageViews: number;
+  newsletterClicks: number;
+  brands: number;
+  plannedContent: number;
+  waitingApproval: number;
+  failedContent: number;
+  postedContent: number;
+  activePlans: number;
+  agentLogs: number;
+  latestQuotes: {
+    id: string;
+    name: string;
+    email: string;
+    serviceInterest: string;
+    status: string;
+    createdAt: Date;
+  }[];
+  latestContent: {
+    id: string;
+    title: string | null;
+    contentType: string;
+    status: string;
+    updatedAt: Date;
+    company: { companyName: string | null };
+    template: { name: string } | null;
+  }[];
+  latestLogs: {
+    id: string;
+    agentName: string;
+    action: string;
+    status: string;
+    message: string | null;
+    createdAt: Date;
+  }[];
+};
 
-  if (!hasDatabaseUrl()) return empty;
+const emptyAdminData: AdminData = {
+  users: 0,
+  subscribers: 0,
+  quotes: 0,
+  articleDrafts: 0,
+  pageViews: 0,
+  newsletterClicks: 0,
+  brands: 0,
+  plannedContent: 0,
+  waitingApproval: 0,
+  failedContent: 0,
+  postedContent: 0,
+  activePlans: 0,
+  agentLogs: 0,
+  latestQuotes: [],
+  latestContent: [],
+  latestLogs: [],
+};
+
+async function getAdminData(): Promise<AdminData> {
+  if (!hasDatabaseUrl()) return emptyAdminData;
 
   try {
     const [
@@ -248,7 +267,7 @@ async function getAdminData() {
       latestLogs,
     };
   } catch {
-    return empty;
+    return emptyAdminData;
   }
 }
 
@@ -393,7 +412,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                   href={withLang("/admin/postly/brands")}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 text-sm font-black text-white shadow-lg shadow-violet-500/25 transition hover:scale-[1.01]"
                 >
-                  <MessageIcon />
+                  <Bot className="h-4 w-4" />
                   {copy.primaryAction}
                 </Link>
                 <Link
@@ -458,7 +477,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate font-bold">{item.title || currentLang === "mn" ? item.title || "Гарчиггүй контент" : item.title || "Untitled content"}</p>
+                        <p className="truncate font-bold">{item.title || (currentLang === "mn" ? "Гарчиггүй контент" : "Untitled content")}</p>
                         <p className="mt-1 text-xs text-white/45">
                           {item.company.companyName || "Brand"} · {item.contentType}{item.template?.name ? ` · ${item.template.name}` : ""}
                         </p>
@@ -484,7 +503,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <QuickAction
                 href={withLang("/admin/postly/brands")}
-                icon={MessageIcon}
+                icon={Bot}
                 title={copy.contentOps}
                 text={copy.contentOpsText}
               />
@@ -579,10 +598,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </section>
     </PostlyAdminShell>
   );
-}
-
-function MessageIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return <Bot className={className} />;
 }
 
 function MetricCard({
