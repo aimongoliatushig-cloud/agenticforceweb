@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  Bot,
   CalendarDays,
   CheckSquare,
   FileCheck2,
@@ -11,7 +10,6 @@ import {
   Sparkles,
   Store,
   UserRound,
-  Zap,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { UserSync } from "@/components/UserSync";
@@ -30,10 +28,20 @@ const navItems = [
     key: "brands",
     labelEn: "Brands",
     labelMn: "Брэндүүд",
-    eyebrowEn: "Workspaces",
-    eyebrowMn: "Workspace",
+    eyebrowEn: "Brand setup",
+    eyebrowMn: "Брэнд тохиргоо",
     href: "/admin/postly/brands",
     icon: Store,
+  },
+  {
+    key: "chat",
+    labelEn: "AI Chat",
+    labelMn: "AI чат",
+    eyebrowEn: "Messenger workspace",
+    eyebrowMn: "Messenger workspace",
+    href: "/admin/postly/chat",
+    icon: MessageSquareText,
+    badge: "AI",
   },
   {
     key: "templates",
@@ -43,16 +51,6 @@ const navItems = [
     eyebrowMn: "Креатив систем",
     href: "/admin/postly/templates",
     icon: Layers3,
-  },
-  {
-    key: "chat",
-    labelEn: "Brand Chat",
-    labelMn: "Брэнд чат",
-    eyebrowEn: "Ask Hermes",
-    eyebrowMn: "Hermes ажиллуулах",
-    href: "/admin/postly/brands",
-    icon: MessageSquareText,
-    badge: "AI",
   },
   {
     key: "calendar",
@@ -107,26 +105,20 @@ export default function PostlyAdminShell({
   const eyebrowKey = lang === "mn" ? "eyebrowMn" : "eyebrowEn";
   const withLang = (href: string, nextLang = lang) => `${href}?lang=${nextLang}`;
   const switchPath = currentPath || navItems.find((item) => item.key === active)?.href || "/admin";
-  const quickCopy = lang === "mn"
+  const shellCopy = lang === "mn"
     ? {
-        title: "AI ажилчдаа удирд",
-        text: "Брэнд сонгоод Hermes-ээр контент, зураг, caption үүсгэнэ.",
-        action: "Брэнд чат нээх",
         status: "Hermes online",
         admin: "AgenticForce Admin",
         role: "AI operator",
       }
     : {
-        title: "Run AI employees",
-        text: "Open a brand, ask Hermes, generate drafts, and approve outputs.",
-        action: "Open brand chat",
         status: "Hermes online",
         admin: "AgenticForce Admin",
         role: "AI operator",
       };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.20),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(245,158,11,0.12),transparent_28%),#050505] text-white">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.16),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(245,158,11,0.10),transparent_26%),#050505] text-white">
       {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? <UserSync locale={lang} /> : null}
       <aside className="fixed left-0 top-0 z-30 hidden h-screen w-72 border-r border-white/10 bg-zinc-950/92 px-4 py-5 shadow-2xl shadow-black/50 backdrop-blur-xl lg:block">
         <Link href={withLang("/admin")} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3 transition hover:border-violet-400/40 hover:bg-white/[0.07]">
@@ -138,23 +130,6 @@ export default function PostlyAdminShell({
             <span className="block text-xs font-medium text-white/45">AI Agent OS</span>
           </span>
         </Link>
-
-        <div className="mt-4 rounded-2xl border border-violet-400/20 bg-violet-500/10 p-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-violet-100">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-violet-400/20 text-violet-100">
-              <Zap className="h-3.5 w-3.5" />
-            </span>
-            {quickCopy.title}
-          </div>
-          <p className="mt-2 text-xs leading-5 text-white/52">{quickCopy.text}</p>
-          <Link
-            href={withLang("/admin/postly/brands")}
-            className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl bg-white px-3 text-xs font-black text-black transition hover:bg-violet-100"
-          >
-            <Bot className="h-3.5 w-3.5" />
-            {quickCopy.action}
-          </Link>
-        </div>
 
         <nav className="mt-5 space-y-1.5">
           {navItems.map((item) => {
@@ -204,7 +179,7 @@ export default function PostlyAdminShell({
             <div className="flex items-center justify-between text-xs">
               <span className="flex items-center gap-2 font-semibold text-emerald-200">
                 <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.9)]" />
-                {quickCopy.status}
+                {shellCopy.status}
               </span>
               <Sparkles className="h-3.5 w-3.5 text-emerald-200" />
             </div>
@@ -215,8 +190,8 @@ export default function PostlyAdminShell({
                 <UserRound className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-sm font-semibold">{quickCopy.admin}</p>
-                <p className="text-xs text-white/45">{quickCopy.role}</p>
+                <p className="text-sm font-semibold">{shellCopy.admin}</p>
+                <p className="text-xs text-white/45">{shellCopy.role}</p>
               </div>
             </div>
           </div>
