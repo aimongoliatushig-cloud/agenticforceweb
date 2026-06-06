@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isAdminUser } from "@/lib/auth";
 import { hasDatabaseUrl, prisma } from "@/lib/db";
-import BrandWorkspace from "./BrandWorkspace";
+import BrandCommandWorkspace from "./BrandCommandWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -68,5 +68,5 @@ export default async function AdminPostlyBrandPage({
 
   if (!brand) notFound();
 
-  return <BrandWorkspace brand={brand} lang={currentLang} />;
+  return <BrandCommandWorkspace brand={brand} lang={currentLang} />;
 }
