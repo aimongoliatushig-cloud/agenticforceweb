@@ -203,6 +203,27 @@ const faqs = [
     answer:
       "Тийм. Ахлах ангийн сурагчид, их дээд сургуулийн оюутнууд, бүтээлч залуус бүгд оролцох боломжтой.",
   },
+  {
+    question: "Өмнө бэлдсэн системээр оролцож болох уу?",
+    answer: "Болно. Гэхдээ тэмцээний үеэр тухайн системээ сайжруулж, challenge-д нийцүүлэн demo хэлбэрээр танилцуулна.",
+  },
+  {
+    question: "Тэмцээний үеэр хоол, цайгаар үйлчлэх үү?",
+    answer:
+      "Тийм. AITHON 2026 тэмцээний хоёр өдрийн турш оролцогчдыг өдрийн хоол, цай, усаар хангана. Та зөвхөн өөрийн notebook болон бүтээлч санаагаа авч ирэхэд хангалттай.",
+  },
+  {
+    question: "Оролцох төлбөртэй юу?",
+    answer: "Үгүй. Оролцоо үнэ төлбөргүй.",
+  },
+  {
+    question: "Төсөл заавал бүрэн ажилладаг байх ёстой юу?",
+    answer: "Үгүй. Prototype буюу ажиллах боломжтой загвар, demo хувилбар байхад хангалттай.",
+  },
+  {
+    question: "Интернэтээр хангах уу?",
+    answer: "Тийм. Тэмцээний үеэр интернет холболт болон ажиллах орчин бэлэн байна.",
+  },
 ];
 
 const organizers = [
@@ -220,6 +241,10 @@ const organizers = [
     name: "UNIT",
     logo: "/aithon-organizer-unit.png",
     href: "https://sumbee.mn",
+  },
+  {
+    name: "Монголын Хиймэл Оюуны Инновацийн Холбоо",
+    logo: "/aithon-organizer-mongol-ai-innovation.png",
   },
 ];
 
@@ -356,14 +381,14 @@ function OrganizersSection() {
               {organizers.map((organizer) => (
                 <motion.a
                   key={organizer.name}
-                  href={organizer.href}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={organizer.href || undefined}
+                  target={organizer.href ? "_blank" : undefined}
+                  rel={organizer.href ? "noreferrer" : undefined}
                   whileHover={{ y: -5, scale: 1.025 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.18 }}
                   className="group flex h-24 items-center justify-center rounded-2xl border border-[#ffaa0026] bg-white/[0.035] p-4 transition hover:border-[#ffb300]/55 hover:bg-[#ff9800]/[0.075] hover:shadow-[0_0_28px_rgba(255,152,0,0.16)]"
-                  aria-label={`${organizer.name} website`}
+                  aria-label={organizer.href ? `${organizer.name} website` : `${organizer.name} logo`}
                 >
                   <img
                     src={organizer.logo}
