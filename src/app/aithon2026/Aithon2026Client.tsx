@@ -134,7 +134,7 @@ const audience = [
 
 const schedule = [
   {
-    day: "06/13",
+    day: "06/17",
     title: "Build Day",
     items: [
       ["09:00", "Бүртгэл, нээлт"],
@@ -146,7 +146,7 @@ const schedule = [
     ],
   },
   {
-    day: "06/14",
+    day: "06/18",
     title: "Demo Day",
     items: [
       ["09:00", "Final build"],
@@ -520,8 +520,10 @@ function HeroSection({ onDetails, onRegister }: { onDetails: () => void; onRegis
             Ахлах анги болон оюутан залуус AI ашиглан хотын бодит асуудлыг 2 өдрийн дотор шийдэх бүтээлч тэмцээн.
           </p>
           <div className="mt-5 flex flex-wrap gap-4 text-sm font-bold text-white">
-            <InfoPill icon={CalendarDays}>2026.06.13 - 06.14</InfoPill>
-            <InfoPill icon={MapPin}>Улаанбаатар хот</InfoPill>
+            <InfoPill icon={CalendarDays}>2026.06.17 - 06.18 · 9:00-18:00</InfoPill>
+            <InfoPill icon={MapPin} href="https://maps.app.goo.gl/w8AAKfN28csefZfo9">
+              Техник технологийн их сургууль, 10-р хороолол
+            </InfoPill>
           </div>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <GlowButton onClick={onRegister} className="h-12 min-w-[190px] rounded-lg px-6 text-sm">
@@ -817,7 +819,8 @@ function FinalCtaSection({ onRegister }: { onRegister: () => void }) {
             Ирээдүйн хотыг хүлээх биш - <span className="text-[#ff9800]">БҮТЭЭ.</span>
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300 sm:text-base">
-            2026.06.13-06.14-нд болох Smart City AI Hackathon-д багаараа бүртгүүлээрэй. Байр хязгаартай.
+            2026.06.17-06.18-нд 9:00-18:00 цагт Техник технологийн их сургууль, 10-р хороололд болох Smart City AI
+            Hackathon-д багаараа бүртгүүлээрэй. Байр хязгаартай.
           </p>
         </div>
         <GlowButton onClick={onRegister} className="h-14 px-7">
@@ -1191,13 +1194,33 @@ function GlowButton({
   );
 }
 
-function InfoPill({ icon: Icon, children }: { icon: typeof CalendarDays; children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-3 rounded-full border border-[#ffaa0026] bg-black/35 px-4 py-3 backdrop-blur">
-      <Icon className="h-5 w-5 text-[#ffb300]" />
-      {children}
-    </span>
+function InfoPill({
+  icon: Icon,
+  children,
+  href,
+}: {
+  icon: typeof CalendarDays;
+  children: React.ReactNode;
+  href?: string;
+}) {
+  const className =
+    "inline-flex items-center gap-3 rounded-full border border-[#ffaa0026] bg-black/35 px-4 py-3 backdrop-blur transition hover:border-[#ffb300]/60 hover:bg-[#ff9800]/10";
+  const content = (
+    <>
+      <Icon className="h-5 w-5 shrink-0 text-[#ffb300]" />
+      <span>{children}</span>
+    </>
   );
+
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className={className}>
+        {content}
+      </a>
+    );
+  }
+
+  return <span className={className}>{content}</span>;
 }
 
 function NoiseLayer() {
