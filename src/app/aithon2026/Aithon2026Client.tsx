@@ -134,7 +134,7 @@ const audience = [
 
 const schedule = [
   {
-    day: "06/17",
+    day: "06/22",
     title: "Build Day",
     items: [
       ["09:00", "Бүртгэл, нээлт"],
@@ -146,7 +146,7 @@ const schedule = [
     ],
   },
   {
-    day: "06/18",
+    day: "06/23",
     title: "Demo Day",
     items: [
       ["09:00", "Final build"],
@@ -545,7 +545,7 @@ function HeroSection({ onDetails, onRegister }: { onDetails: () => void; onRegis
             Ахлах анги болон оюутан залуус AI ашиглан хотын бодит асуудлыг 2 өдрийн дотор шийдэх бүтээлч тэмцээн.
           </p>
           <div className="mt-5 flex flex-wrap gap-4 text-sm font-bold text-white">
-            <InfoPill icon={CalendarDays}>2026.06.17 - 06.18 · 9:00-18:00</InfoPill>
+            <InfoPill icon={CalendarDays}>2026.06.22 - 06.23 · 9:00-18:00</InfoPill>
             <InfoPill icon={MapPin} href="https://maps.app.goo.gl/w8AAKfN28csefZfo9">
               Техник технологийн их сургууль, 10-р хороолол
             </InfoPill>
@@ -844,7 +844,7 @@ function FinalCtaSection({ onRegister }: { onRegister: () => void }) {
             Ирээдүйн хотыг хүлээх биш - <span className="text-[#ff9800]">БҮТЭЭ.</span>
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300 sm:text-base">
-            2026.06.17-06.18-нд 9:00-18:00 цагт Техник технологийн их сургууль, 10-р хороололд болох Smart City AI
+            2026.06.22-06.23-нд 9:00-18:00 цагт Техник технологийн их сургууль, 10-р хороололд болох Smart City AI
             Hackathon-д багаараа бүртгүүлээрэй. Байр хязгаартай.
           </p>
         </div>
