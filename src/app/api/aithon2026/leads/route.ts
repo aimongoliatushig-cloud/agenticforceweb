@@ -35,7 +35,7 @@ export async function GET() {
     // Search leads: either by AITHON tag OR by name prefix [AITHON2026]
     let leads: any[] = [];
     if (tagIds.length > 0) {
-      leads = await executeKw(uid, "crm.lead", "search_read", [
+      leads = (await executeKw(uid, "crm.lead", "search_read", [
         ["|", ["tag_ids", "in", tagIds], ["name", "=ilike", "[AITHON2026]%"]],
       ], {
         fields: [
@@ -45,9 +45,9 @@ export async function GET() {
         ],
         order: "create_date desc",
         limit: 500,
-      });
+      })) as any[];
     } else {
-      leads = await executeKw(uid, "crm.lead", "search_read", [
+      leads = (await executeKw(uid, "crm.lead", "search_read", [
         [["name", "=ilike", "[AITHON2026]%"]],
       ], {
         fields: [
@@ -57,7 +57,7 @@ export async function GET() {
         ],
         order: "create_date desc",
         limit: 500,
-      });
+      })) as any[];
     }
 
     // Also get tag names for display
