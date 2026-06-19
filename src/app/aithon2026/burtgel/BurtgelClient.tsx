@@ -12,6 +12,7 @@ import {
   Tag,
   Link as LinkIcon,
   Clock,
+  UserCheck,
 } from "lucide-react";
 
 type Lead = {
@@ -26,6 +27,10 @@ type Lead = {
   revenue: number;
   tags: string[];
   description: string;
+  teamSize: string;
+  hasMentor: boolean;
+  mentorName: string;
+  challengeTrack: string;
 };
 
 export function BurtgelClient() {
@@ -56,7 +61,7 @@ export function BurtgelClient() {
     fetchLeads();
   }, []);
 
-  const filtered = leads.filter((l) => {
+  const filtered = leads.filter((l: Lead) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -64,7 +69,10 @@ export function BurtgelClient() {
       l.contactName.toLowerCase().includes(q) ||
       l.email.toLowerCase().includes(q) ||
       l.phone.includes(q) ||
-      l.tags.some((t) => t.toLowerCase().includes(q))
+      l.tags.some((t) => t.toLowerCase().includes(q)) ||
+      l.teamSize.toLowerCase().includes(q) ||
+      l.challengeTrack.toLowerCase().includes(q) ||
+      l.mentorName.toLowerCase().includes(q)
     );
   });
 
@@ -249,11 +257,32 @@ function LeadCard({
         </div>
       )}
 
-      {/* Description preview */}
-      {lead.description && (
-        <p className="mt-3 line-clamp-2 text-xs leading-5 text-zinc-500">
-          {lead.description.replace(/Smart City AI Hackathon.*?\n/, "").slice(0, 200)}
-        </p>
+      {/* Team size + Mentor Info */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {lead.teamSize && (
+          <div className="flex items-center gap-1.5 rounded-full border border-[#ffaa0026] bg-[#ff9800]/10 px-3 py-1 text-[11px] font-semibold text-[#ffb300]">
+            <Users className="h-3.5 w-3.5" />
+            {lead.teamSize}
+          </div>
+        )}
+        {lead.hasMentor && (
+          <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-400">
+            <UserCheck className="h-3.5 w-3.5" />
+            Mentor: {lead.mentorName || "Тийм"}
+          </div>
+        )}
+        {!lead.hasMentor && (
+          <div className="flex items-center gap-1.5 rounded-full border border-zinc-500/30 bg-zinc-500/10 px-3 py-1 text-[11px] font-semibold text-zinc-500">
+            Mentor: Үгүй
+          </div>
+        )}
+      </div>
+
+      {/* Challenge Track */}
+      {lead.challengeTrack && (
+        <div className="mt-2 text-xs text-zinc-500">
+          Track: <span className="text-zinc-400">{lead.challengeTrack}</span>
+        </div>
       )}
 
       {/* Stage + user footer */}

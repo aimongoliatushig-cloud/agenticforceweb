@@ -96,11 +96,20 @@ export async function GET() {
       }
     }
 
+    // Parse team size and mentor from description
+    const parseFormField = (desc: string, label: string): string => {
+      const regex = new RegExp(`${label}:\\s*(.+)`, "i");
+      const m = desc.match(regex);
+      return m ? m[1].trim() : "";
+    };
+
     // Normalize leads for the frontend
     const normalized = (Array.isArray(leads) ? leads : []).map((l: any) => {
       const stageId = Array.isArray(l.stage_id) ? l.stage_id[0] : (typeof l.stage_id === "number" ? l.stage_id : null);
       const userId = Array.isArray(l.user_id) ? l.user_id[0] : (typeof l.user_id === "number" ? l.user_id : null);
       const tagIdList = Array.isArray(l.tag_ids) ? l.tag_ids.map((t: any) => Array.isArray(t) ? t[0] : t) : [];
+      const desc = l.description || "";
+      const hasMentor = parseFormField(desc, "Mentor байгаа").toLowerCase() === "тийм";
 
       return {
         id: l.id,
@@ -115,7 +124,11 @@ export async function GET() {
         createdDate: l.create_date || "",
         revenue: l.expected_revenue || 0,
         tags: tagIdList.map((tid: number) => tagMap[tid] || "").filter(Boolean),
-        description: l.description || "",
+        description: desc,
+        teamSize: parseFormField(desc, "Team size"),
+        hasMentor,
+        mentorName: hasMentor ? parseFormField(desc, "Mentor нэр") : "",
+        challengeTrack: parseFormField(desc, "Challenge Track"),
       };
     });
 
