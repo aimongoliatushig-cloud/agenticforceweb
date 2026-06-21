@@ -78,7 +78,7 @@ export function RequestDemoPopup() {
     setStatus("idle");
 
     if (typeof window === "undefined") return;
-    if (pathname.startsWith("/admin") || pathname.includes("/thank-you")) return;
+    if (pathname.startsWith("/admin") || pathname.startsWith("/aithon2026") || pathname.includes("/thank-you")) return;
     if (window.localStorage.getItem("agenticforce:demo-popup:submitted") === "true") return;
     if (window.sessionStorage.getItem(storageKey) === "true") return;
 

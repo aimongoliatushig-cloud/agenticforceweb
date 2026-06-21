@@ -278,9 +278,7 @@ export function Aithon2026Client() {
   }, [modal, mobileOpen]);
 
   const openRegistration = () => {
-    setSubmitState("idle");
-    setError("");
-    setModal("register");
+    alert("Бүртгэл хаагдсан 🚫 AITHON 2026 бүртгэл дууслаа.");
   };
 
   const updateField = <K extends keyof RegistrationForm>(key: K, value: RegistrationForm[K]) => {
