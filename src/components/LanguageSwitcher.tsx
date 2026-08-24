@@ -28,10 +28,11 @@ type LanguageSwitcherProps = {
 
 export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
   const pathname = usePathname() || "/en";
+  const pathnameLocale = pathname.split("/")[1];
   const current: Locale = pathname.startsWith("/construction-erp")
     ? "mn"
-    : isLocale(pathname.split("/")[1])
-      ? pathname.split("/")[1]
+    : isLocale(pathnameLocale)
+      ? pathnameLocale
       : "en";
 
   return (
