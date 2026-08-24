@@ -7,6 +7,10 @@ import { cn } from "@/lib/utils";
 import { isLocale, type Locale } from "@/lib/i18n";
 
 function switchLocale(pathname: string, locale: Locale) {
+  if (pathname.startsWith("/construction-erp")) {
+    return locale === "mn" ? "/construction-erp" : "/en";
+  }
+
   const segments = pathname.split("/");
   if (isLocale(segments[1])) {
     segments[1] = locale;
@@ -24,7 +28,11 @@ type LanguageSwitcherProps = {
 
 export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
   const pathname = usePathname() || "/en";
-  const current = isLocale(pathname.split("/")[1]) ? pathname.split("/")[1] : "en";
+  const current: Locale = pathname.startsWith("/construction-erp")
+    ? "mn"
+    : isLocale(pathname.split("/")[1])
+      ? pathname.split("/")[1]
+      : "en";
 
   return (
     <div
