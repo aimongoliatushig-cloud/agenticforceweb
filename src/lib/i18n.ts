@@ -7,6 +7,8 @@ export function isLocale(value: string | undefined): value is Locale {
 }
 
 export function normalizeLocale(value: string | undefined): Locale {
+  // Direct Mongolian campaign/landing routes intentionally omit a locale prefix.
+  if (value === "construction-erp") return "mn";
   return isLocale(value) ? value : "en";
 }
 
